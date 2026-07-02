@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tg-tree-wizard"
+version = "1.0.2"
+description = "Лёгкий движок древовидных inline-опросников (wizard) для aiogram 3"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [
+    { name = "I1obody" },
+]
+keywords = ["aiogram", "telegram", "telegram-bot", "inline-keyboard", "fsm", "wizard"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: AsyncIO",
+    "Topic :: Communications :: Chat",
+]
+dependencies = [
+    "aiogram>=3.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.urls]
+Homepage = "https://github.com/I1obody/tg_tree_wizard"
+Repository = "https://github.com/I1obody/tg_tree_wizard"
+Issues = "https://github.com/I1obody/tg_tree_wizard/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tg_tree_wizard = ["py.typed"]
