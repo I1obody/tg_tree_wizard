@@ -32,9 +32,9 @@ dependencies = [
 dev = ["pytest>=8.0"]
 
 [project.urls]
-Homepage = "https://github.com/ваш-ник/tg-tree-wizard"
-Repository = "https://github.com/ваш-ник/tg-tree-wizard"
-Issues = "https://github.com/ваш-ник/tg-tree-wizard/issues"
+Homepage = "https://github.com/I1obody/tg-tree-wizard"
+Repository = "https://github.com/I1obody/tg-tree-wizard"
+Issues = "https://github.com/I1obody/tg-tree-wizard/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
