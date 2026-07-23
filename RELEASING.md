@@ -31,8 +31,7 @@ rm -rf dist build *.egg-info src/*.egg-info      # PowerShell: Remove-Item -Recu
 python -m build
 ```
 
-## 4. (Опционально, для изменений в самом коде — не обязательно для
-   мелких фиксов метаданных) Проверить на TestPyPI
+## 4. (Опционально, для изменений в самом коде — не обязательно для мелких фиксов метаданных) Проверить на TestPyPI
 
 ```bash
 twine upload --repository testpypi dist/*
