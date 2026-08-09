@@ -59,8 +59,6 @@ python examples/pizza_bot.py
 - `MiddlewareData`, `AbortWizard`, `MiddlewareHook`
 - `simulate_wizard()`, `simulate_wizard_with_state()`
 
-Ломающие изменения будут только в `2.0.0`.
-
 ## Открытие PR
 
 1. Создайте ветку от `main`.

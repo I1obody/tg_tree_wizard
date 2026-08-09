@@ -4,6 +4,28 @@
 [semver](https://semver.org/): `MAJOR.MINOR.PATCH`
 (ломающие изменения → MAJOR, новые фичи без поломок → MINOR, багфиксы → PATCH).
 
+## [2.0.1] — 2026-08-09
+
+### Fixed
+- `TreeMenu`: исправлена навигация при использовании `MenuOption` с `next_node=None`.
+- Middleware: корректная передача `MenuMiddlewareData` в хуки для `TreeMenu`.
+
+## [2.0.0] — 2026-08-09
+
+### Added (Breaking)
+- **`TreeMenu`** — новый адаптер для нелинейной навигации по меню с произвольными переходами между разделами.
+- **`MenuOption`** — тип варианта для меню, не сохраняющий ответ в `WizardState`.
+- **`MenuState`** — отдельное состояние FSM для меню (хранит текущий узел и историю переходов).
+- **`MenuMiddlewareData`**, **`MenuAbortWizard`**, **`MenuMiddlewareHook`** — middleware для `TreeMenu` с новыми типами событий: `"menu_choice"`, `"menu_back"`.
+
+### Added
+- **`WizardStates`**, **`QuizStates`**, **`MenuStates`** — именованные перечисления состояний FSM.
+- **`resolve_dynamic_options()`** — утилитная функция для разрешения динамических опций.
+
+### Changed
+- Публичный API расширен: `TreeMenu`, `MenuOption`, `MenuState`, middleware для меню.
+- Описание пакета в `pyproject.toml`: добавлено упоминание "меню".
+
 ## [1.1.0] — 2026-08-04
 
 ### Added (P0 — Критические)
@@ -36,7 +58,6 @@
   раздел "Зачем это нужно", Quick Start в первых строках, позиционирование
   относительно aiogram_dialog.
 - Инструкции для контрибьюторов вынесены в `CONTRIBUTING.md`.
-- Процесс публикации вынесен в `RELEASING.md`.
 
 ## [1.0.1] — 2026-07-02
 

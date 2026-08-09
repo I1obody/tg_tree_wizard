@@ -4,6 +4,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from typing import Any
 
 
 class TreeError(Exception):
@@ -14,8 +15,8 @@ class StaleChoiceError(Exception):
     """Пользователь нажал на кнопку из уже неактуального (старого) сообщения."""
 
 
-# Тип для factory-функций динамических опций.
-DynamicLabelFactory = Callable[["WizardState"], str]
+# Тип для factory-функций динамических опций — принимает WizardState или MenuState.
+DynamicLabelFactory = Callable[["WizardState | MenuState"], str]
 
 
 @dataclass(frozen=True)
@@ -78,6 +79,25 @@ class SwitchOption(Option):
 
 
 @dataclass(frozen=True)
+class MenuOption(Option):
+    """
+    Вариант ответа, который отображается в меню (P1.2).
+
+    Отличается от обычного Option флагом `is_menu_item`, который позволяет
+    TreeMenu отличать опции для клавиатуры от опций для меню. По умолчанию
+    все MenuOption имеют is_menu_item=True.
+
+    Пример:
+        MenuOption(label="📋 Список заказов", value="orders")
+        MenuOption(label="ℹ️ О нас", value="about", next_node="about_page")
+        # Кастомный callback_data для внешних обработчиков (не перехватывается TreeMenu):
+        MenuOption(label="📝 Пройти опрос", value="survey_btn", callback_data="custom:survey_btn")
+    """
+    is_menu_item: bool = True
+    callback_data: str | None = None  # Переопределяет автоматически генерируемый формат {prefix}:{node_id}:{index}
+
+
+@dataclass(frozen=True)
 class Node:
     text: str
     # Поддерживает как обычные Option, так и DynamicOption (P1.1).
@@ -88,13 +108,15 @@ from typing import Optional
 
 
 def resolve_dynamic_options(
-    node: Node, state: Optional["WizardState"] = None
+    node: Node, state: Optional["WizardState | MenuState"] = None
 ) -> tuple[Option, ...]:
     """
     Разворачивает DynamicOption в обычные Option на лету (P1.1).
 
     Если state=None, DynamicOption пропускается без развёртки — используется
     для валидации дерева при старте бота.
+    
+    Поддерживает как WizardState (для TreeWizard), так и MenuState (для TreeMenu).
     """
     result: list[Option] = []
     for opt in node.options:
@@ -109,7 +131,7 @@ def resolve_dynamic_options(
     return tuple(result)
 
 
-def validate_tree(tree: dict[str, Node], root: str) -> None:
+def validate_tree(tree: dict[str, Node], root: str, allow_external_refs: bool = False) -> None:
     """
     Проверяет дерево один раз при старте бота, а не в рантайме на живом
     пользователе. Ловит: отсутствующий root, ссылки на несуществующие
@@ -117,6 +139,10 @@ def validate_tree(tree: dict[str, Node], root: str) -> None:
 
     DynamicOption пропускаются при проверке next_node — их валидация
     происходит при каждом рендере клавиатуры.
+
+    Если allow_external_refs=True, MenuOption с ссылками вне дерева
+    пропускаются (используется для TreeWizard, где меню может ссылаться
+    на main_menu).
     """
     if root not in tree:
         raise TreeError(f"Корневой узел {root!r} отсутствует в дереве")
@@ -128,6 +154,9 @@ def validate_tree(tree: dict[str, Node], root: str) -> None:
         if not resolved and not any(isinstance(o, DynamicOption) for o in node.options):
             raise TreeError(f"Узел {node_id!r} не содержит вариантов ответа")
         for opt in resolved:
+            # MenuOption может ссылаться на узлы вне этого дерева (например, main_menu)
+            if isinstance(opt, MenuOption) and allow_external_refs:
+                continue
             if opt.next_node is not None and opt.next_node not in tree:
                 raise TreeError(
                     f"Узел {node_id!r}: вариант {opt.label!r} ссылается "
@@ -148,13 +177,18 @@ class WizardState:
     Всё состояние одного прохождения опроса. Неизменяемое (frozen) —
     каждая операция возвращает НОВЫЙ WizardState, старый не трогается.
     Это то, что вы будете класть целиком в FSMContext.data.
+    
+    shared_data — общий словарь, который сохраняется при переходах между
+    меню и опросом. Используется для передачи данных (например, выбранный
+    товар из опроса, который потом отображается в меню).
     """
     stack: tuple[str, ...]
     answers: tuple[Answer, ...] = field(default_factory=tuple)
+    shared_data: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def start(cls, root: str) -> "WizardState":
-        return cls(stack=(root,), answers=())
+        return cls(stack=(root,), answers=(), shared_data={})
 
     @property
     def current_node(self) -> str:
@@ -174,6 +208,7 @@ class WizardState:
                 {"node": a.node, "label": a.label, "value": a.value}
                 for a in self.answers
             ),
+            "shared_data": dict(self.shared_data),
         }
 
     @classmethod
@@ -184,6 +219,42 @@ class WizardState:
                 Answer(node=a["node"], label=a["label"], value=a["value"])
                 for a in data["answers"]
             ),
+            shared_data=data.get("shared_data", {}),
+        )
+
+
+@dataclass(frozen=True)
+class MenuState:
+    """
+    Состояние для меню — текущий узел, родительский узел и собранные данные.
+
+    parent_node используется для корректной навигации "Назад" —
+    запоминает, откуда пользователь пришёл в текущий узел.
+    
+    shared_data — общий словарь, который сохраняется при переходах между
+    меню и опросом. Используется для передачи данных (например, выбранный
+    товар из опроса, который потом отображается в меню).
+    """
+    current_node: str
+    data: dict[str, Any] = field(default_factory=dict)
+    parent_node: str | None = None
+    shared_data: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        return {
+            "current_node": self.current_node,
+            "parent_node": self.parent_node,
+            "data": self.data,
+            "shared_data": dict(self.shared_data),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "MenuState":
+        return cls(
+            current_node=data["current_node"],
+            parent_node=data.get("parent_node"),
+            data=data.get("data", {}),
+            shared_data=data.get("shared_data", {}),
         )
 
 
@@ -234,7 +305,8 @@ def go_back(state: WizardState) -> WizardState:
 #   "Текст кнопки"                       -> label == value, переход на следующий шаг
 #   ("Текст кнопки", "значение")         -> явное значение, переход на следующий шаг
 #   ("Текст кнопки", "значение", "узел") -> явное значение + явный переход (ветвление)
-ShortOption = str | tuple[str, str] | tuple[str, str, str]
+#   DynamicOption(...)                   -> метка вычисляется в рантайме
+ShortOption = str | tuple[str, str] | tuple[str, str, str] | DynamicOption
 
 # Один шаг: (id_узла, текст_вопроса, список_вариантов)
 Step = tuple[str, str, list[ShortOption]]
@@ -277,6 +349,9 @@ def linear_wizard(steps: list[Step]) -> tuple[dict[str, Node], str]:
         for opt in options:
             if isinstance(opt, str):
                 label, value, next_node = opt, opt, default_next
+            elif isinstance(opt, DynamicOption):
+                # DynamicOption — метка вычисляется в рантайме (placeholder)
+                label, value, next_node = "", opt.value, opt.next_node or default_next
             elif len(opt) == 2:
                 label, value = opt
                 next_node = default_next
