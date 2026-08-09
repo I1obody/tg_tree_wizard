@@ -93,8 +93,11 @@ class MenuOption(Option):
         # Кастомный callback_data для внешних обработчиков (не перехватывается TreeMenu):
         MenuOption(label="📝 Пройти опрос", value="survey_btn", callback_data="custom:survey_btn")
     """
+
     is_menu_item: bool = True
-    callback_data: str | None = None  # Переопределяет автоматически генерируемый формат {prefix}:{node_id}:{index}
+    callback_data: str | None = (
+        None  # Переопределяет автоматически генерируемый формат {prefix}:{node_id}:{index}
+    )
 
 
 @dataclass(frozen=True)
@@ -115,7 +118,7 @@ def resolve_dynamic_options(
 
     Если state=None, DynamicOption пропускается без развёртки — используется
     для валидации дерева при старте бота.
-    
+
     Поддерживает как WizardState (для TreeWizard), так и MenuState (для TreeMenu).
     """
     result: list[Option] = []
@@ -123,7 +126,9 @@ def resolve_dynamic_options(
         if isinstance(opt, DynamicOption):
             if state is not None:
                 label = opt.label_factory(state)
-                result.append(Option(label=label, value=opt.value, next_node=opt.next_node))
+                result.append(
+                    Option(label=label, value=opt.value, next_node=opt.next_node)
+                )
             # Если state=None (валидация), пропускаем DynamicOption —
             # его next_node будет проверен при следующем рендере.
         else:
@@ -131,7 +136,9 @@ def resolve_dynamic_options(
     return tuple(result)
 
 
-def validate_tree(tree: dict[str, Node], root: str, allow_external_refs: bool = False) -> None:
+def validate_tree(
+    tree: dict[str, Node], root: str, allow_external_refs: bool = False
+) -> None:
     """
     Проверяет дерево один раз при старте бота, а не в рантайме на живом
     пользователе. Ловит: отсутствующий root, ссылки на несуществующие
@@ -177,11 +184,12 @@ class WizardState:
     Всё состояние одного прохождения опроса. Неизменяемое (frozen) —
     каждая операция возвращает НОВЫЙ WizardState, старый не трогается.
     Это то, что вы будете класть целиком в FSMContext.data.
-    
+
     shared_data — общий словарь, который сохраняется при переходах между
     меню и опросом. Используется для передачи данных (например, выбранный
     товар из опроса, который потом отображается в меню).
     """
+
     stack: tuple[str, ...]
     answers: tuple[Answer, ...] = field(default_factory=tuple)
     shared_data: dict[str, Any] = field(default_factory=dict)
@@ -230,11 +238,12 @@ class MenuState:
 
     parent_node используется для корректной навигации "Назад" —
     запоминает, откуда пользователь пришёл в текущий узел.
-    
+
     shared_data — общий словарь, который сохраняется при переходах между
     меню и опросом. Используется для передачи данных (например, выбранный
     товар из опроса, который потом отображается в меню).
     """
+
     current_node: str
     data: dict[str, Any] = field(default_factory=dict)
     parent_node: str | None = None

@@ -11,9 +11,9 @@ Middleware-система для TreeWizard.
     wizard = TreeWizard(TREE, root=ROOT, middleware=[log_mw])
 """
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Literal
-
+from typing import Any, Literal
 
 EventType = Literal["start", "choice", "back", "cancel", "finish", "transition_to_menu"]
 
@@ -47,7 +47,9 @@ MiddlewareHook = Callable[[MiddlewareData], Awaitable[None]]
 
 # === Menu middleware types (P1.2) ===
 
-MenuEventType = Literal["menu_start", "menu_choice", "menu_back", "transition_to_wizard"]
+MenuEventType = Literal[
+    "menu_start", "menu_choice", "menu_back", "transition_to_wizard"
+]
 
 
 @dataclass(frozen=True)

@@ -44,5 +44,3 @@ class WizardManager:
     def wizards(self) -> dict[str, object]:
         """Возвращает копию словаря зарегистрированных wizard'ов."""
         return dict(self._wizards)
-
-

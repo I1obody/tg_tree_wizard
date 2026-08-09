@@ -1,14 +1,23 @@
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import pytest
-from tg_tree_wizard.core import (
-    linear_wizard,
-    Node, Option, DynamicOption, WizardState, TreeError, StaleChoiceError,
-    validate_tree, choose, go_back, resolve_dynamic_options,
-)
 
+from tg_tree_wizard.core import (
+    DynamicOption,
+    Node,
+    Option,
+    StaleChoiceError,
+    TreeError,
+    WizardState,
+    choose,
+    go_back,
+    linear_wizard,
+    resolve_dynamic_options,
+    validate_tree,
+)
 
 # Небольшое тестовое дерево: язык -> формат -> финал
 TREE = {
@@ -103,10 +112,12 @@ def test_state_roundtrips_through_dict_like_fsmcontext_would_store_it():
 
 
 def test_linear_wizard_plain_strings_chain_to_next_step():
-    tree, root = linear_wizard([
-        ("a", "Шаг A", ["X", "Y"]),
-        ("b", "Шаг B", ["Z"]),
-    ])
+    tree, root = linear_wizard(
+        [
+            ("a", "Шаг A", ["X", "Y"]),
+            ("b", "Шаг B", ["Z"]),
+        ]
+    )
     assert root == "a"
     validate_tree(tree, root)
 
@@ -121,14 +132,20 @@ def test_linear_wizard_plain_strings_chain_to_next_step():
 
 
 def test_linear_wizard_explicit_next_node_enables_branching():
-    tree, root = linear_wizard([
-        ("topping", "Начинка", [
-            ("Пепперони", "pepperoni", "spicy"),
-            ("Маргарита", "margherita", "confirm"),
-        ]),
-        ("spicy", "Острота", ["Да", "Нет"]),
-        ("confirm", "Финал", ["OK"]),
-    ])
+    tree, root = linear_wizard(
+        [
+            (
+                "topping",
+                "Начинка",
+                [
+                    ("Пепперони", "pepperoni", "spicy"),
+                    ("Маргарита", "margherita", "confirm"),
+                ],
+            ),
+            ("spicy", "Острота", ["Да", "Нет"]),
+            ("confirm", "Финал", ["OK"]),
+        ]
+    )
     validate_tree(tree, root)
 
     state = WizardState.start(root)
@@ -153,8 +170,12 @@ def test_state_to_dict_returns_tuples_not_lists():
     state, _, _ = choose(TREE, state, "lang", 0)
 
     d = state.to_dict()
-    assert isinstance(d["stack"], tuple), f"stack должен быть tuple, получен {type(d['stack'])}"
-    assert isinstance(d["answers"], tuple), f"answers должен быть tuple, получен {type(d['answers'])}"
+    assert isinstance(d["stack"], tuple), (
+        f"stack должен быть tuple, получен {type(d['stack'])}"
+    )
+    assert isinstance(d["answers"], tuple), (
+        f"answers должен быть tuple, получен {type(d['answers'])}"
+    )
 
 
 def test_state_from_dict_restores_correctly():
@@ -196,6 +217,7 @@ def test_answer_dict_has_correct_keys():
 
 # --- Тесты для P1.1: DynamicOption ---
 
+
 def test_dynamic_option_resolves_label_from_state():
     """P1.1: DynamicOption разворачивает label через factory на основе состояния."""
     from tg_tree_wizard.core import DynamicOption, resolve_dynamic_options
@@ -235,11 +257,13 @@ def test_choose_with_dynamic_option_works():
     tree = {
         "dyn": Node(
             text="Выберите:",
-            options=(DynamicOption(
-                label_factory=lambda state: f"Шаг {len(state.answers) + 1}",
-                value="dynamic_val",
-                next_node="final",
-            ),),
+            options=(
+                DynamicOption(
+                    label_factory=lambda state: f"Шаг {len(state.answers) + 1}",
+                    value="dynamic_val",
+                    next_node="final",
+                ),
+            ),
         ),
         "final": Node(text="Финал", options=(Option("Готово", "done"),)),
     }
@@ -260,7 +284,9 @@ def test_resolve_dynamic_options_mixed_with_regular():
         text="Test",
         options=(
             Option("Статик", "static_val"),
-            DynamicOption(label_factory=lambda s: f"Динам {s.current_node}", value="dyn_val"),
+            DynamicOption(
+                label_factory=lambda s: f"Динам {s.current_node}", value="dyn_val"
+            ),
             Option("Ещё статик", "static2"),
         ),
     )
@@ -283,9 +309,13 @@ def test_validate_tree_with_dynamic_option_passes():
     tree = {
         "dyn": Node(
             text="Test",
-            options=(DynamicOption(
-                label_factory=lambda s: "x", value="v", next_node="final",
-            ),),
+            options=(
+                DynamicOption(
+                    label_factory=lambda s: "x",
+                    value="v",
+                    next_node="final",
+                ),
+            ),
         ),
         "final": Node(text="Final", options=(Option("OK", "ok"),)),
     }
@@ -314,6 +344,7 @@ def test_validate_tree_with_dynamic_option_fails_on_bad_next():
 
 def _run(coro):
     import asyncio
+
     return asyncio.run(coro)
 
 
@@ -322,12 +353,16 @@ def test_simulate_wizard_simple_path():
     from tg_tree_wizard.testing import simulate_wizard
 
     tree = {
-        "a": Node(text="Step A", options=(Option("A1", "v1", "b"), Option("A2", "v2", "c"))),
+        "a": Node(
+            text="Step A", options=(Option("A1", "v1", "b"), Option("A2", "v2", "c"))
+        ),
         "b": Node(text="Step B", options=(Option("B1", "v3", None),)),
         "c": Node(text="Step C", options=(Option("C1", "v4", None),)),
     }
 
-    answers, final_node = _run(simulate_wizard(tree, root="a", choices=[("a", 0), ("b", 0)]))
+    answers, final_node = _run(
+        simulate_wizard(tree, root="a", choices=[("a", 0), ("b", 0)])
+    )
     assert len(answers) == 2
     assert answers[0].value == "v1"
     assert answers[1].value == "v3"
@@ -339,12 +374,16 @@ def test_simulate_wizard_branching():
     from tg_tree_wizard.testing import simulate_wizard
 
     tree = {
-        "a": Node(text="Step A", options=(Option("A1", "v1", "b"), Option("A2", "v2", "c"))),
+        "a": Node(
+            text="Step A", options=(Option("A1", "v1", "b"), Option("A2", "v2", "c"))
+        ),
         "b": Node(text="Step B", options=(Option("B1", "v3", None),)),
         "c": Node(text="Step C", options=(Option("C1", "v4", None),)),
     }
 
-    answers, final_node = _run(simulate_wizard(tree, root="a", choices=[("a", 1), ("c", 0)]))
+    answers, final_node = _run(
+        simulate_wizard(tree, root="a", choices=[("a", 1), ("c", 0)])
+    )
     assert len(answers) == 2
     assert answers[0].value == "v2"
     assert answers[1].value == "v4"
@@ -380,7 +419,9 @@ def test_simulate_wizard_with_state_returns_full_state():
         "b": Node(text="Step B", options=(Option("B1", "v2", None),)),
     }
 
-    answers, state = _run(simulate_wizard_with_state(tree, root="a", choices=[("a", 0), ("b", 0)]))
+    answers, state = _run(
+        simulate_wizard_with_state(tree, root="a", choices=[("a", 0), ("b", 0)])
+    )
     assert len(answers) == 2
     assert state.current_node == "b"
     assert len(state.answers) == 2
@@ -402,13 +443,22 @@ def test_simulate_wizard_with_dynamic_option():
     from tg_tree_wizard.testing import simulate_wizard
 
     tree = {
-        "a": Node(text="A", options=(DynamicOption(
-            label_factory=lambda s: f"Dynamic {len(s.answers)}", value="dv1", next_node="b",
-        ),)),
+        "a": Node(
+            text="A",
+            options=(
+                DynamicOption(
+                    label_factory=lambda s: f"Dynamic {len(s.answers)}",
+                    value="dv1",
+                    next_node="b",
+                ),
+            ),
+        ),
         "b": Node(text="B", options=(Option("B1", "v2", None),)),
     }
 
-    answers, final_node = _run(simulate_wizard(tree, root="a", choices=[("a", 0), ("b", 0)]))
+    answers, final_node = _run(
+        simulate_wizard(tree, root="a", choices=[("a", 0), ("b", 0)])
+    )
     assert len(answers) == 2
     assert answers[0].label == "Dynamic 0"
     assert final_node == "b"

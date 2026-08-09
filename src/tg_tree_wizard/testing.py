@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .core import Node, WizardState, choose, resolve_dynamic_options
+from .core import Node, WizardState, choose
 
 
 async def simulate_wizard(

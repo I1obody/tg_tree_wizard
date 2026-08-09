@@ -129,3 +129,13 @@ dmypy.json
 # OS generated files
 .DS_Store
 Thumbs.db
+
+.dypirc
+
+test_output.txt
+ruff_format.txt
+ruff_check.txt
+ruff_fix.txt
+ruff_check2.txt
+ruff_check3.txt
+ruff_check4.txt

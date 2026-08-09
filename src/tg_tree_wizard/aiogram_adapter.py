@@ -4,17 +4,41 @@
 она уже проверена в core.py, тут только Telegram I/O.
 """
 
-from aiogram import Router, F
+from __future__ import annotations
+
+from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 
 from .core import (
-    Node, Option, DynamicOption, URLOption, SwitchOption, MenuOption, WizardState, MenuState, choose, go_back,
-    validate_tree, resolve_dynamic_options, StaleChoiceError, TreeError,
+    MenuOption,
+    MenuState,
+    Node,
+    StaleChoiceError,
+    SwitchOption,
+    TreeError,
+    URLOption,
+    WizardState,
+    choose,
+    go_back,
+    resolve_dynamic_options,
+    validate_tree,
 )
-from .middleware import MiddlewareData, AbortWizard, MiddlewareHook, MenuMiddlewareData, MenuAbortWizard, MenuMiddlewareHook
+from .middleware import (
+    AbortWizard,
+    MenuAbortWizard,
+    MenuMiddlewareData,
+    MenuMiddlewareHook,
+    MiddlewareData,
+    MiddlewareHook,
+)
 
 
 class WizardStates(StatesGroup):
@@ -84,12 +108,12 @@ def _visual_width(text: str) -> int:
         code_point = ord(char)
         # Основные диапазоны emoji (wide characters)
         if (
-            (0x1F600 <= code_point <= 0x1F64F) or  # Emoticons
-            (0x1F300 <= code_point <= 0x1F5FF) or  # Misc Symbols and Pictographs
-            (0x1F680 <= code_point <= 0x1F6FF) or  # Transport and Map
-            (0x1F1E0 <= code_point <= 0x1F1FF) or  # Flags
-            (0x2702 <= code_point <= 0x27B0) or    # Dingbats
-            (0xFE0F == code_point)                 # Variation Selector-16
+            (0x1F600 <= code_point <= 0x1F64F)  # Emoticons
+            or (0x1F300 <= code_point <= 0x1F5FF)  # Misc Symbols and Pictographs
+            or (0x1F680 <= code_point <= 0x1F6FF)  # Transport and Map
+            or (0x1F1E0 <= code_point <= 0x1F1FF)  # Flags
+            or (0x2702 <= code_point <= 0x27B0)  # Dingbats
+            or (0xFE0F == code_point)  # Variation Selector-16
         ):
             width += 2
         else:
@@ -154,7 +178,9 @@ class TreeWizard:
         back_button_text: str = "⬅️ Назад",
         state_group: type[StatesGroup] | None = None,
     ):
-        validate_tree(tree, root, allow_external_refs=True)  # TreeWizard допускает внешние ссылки (main_menu)
+        validate_tree(
+            tree, root, allow_external_refs=True
+        )  # TreeWizard допускает внешние ссылки (main_menu)
         check_callback_data_limits(tree, callback_prefix)
         # Если state_group не передан — используем WizardStates по умолчанию
         if state_group is None:
@@ -179,7 +205,7 @@ class TreeWizard:
         """
         Строит клавиатуру для узла. Если передан state — разворачивает
         DynamicOption в обычные Option (P1.1).
-        
+
         Поддерживает кастомный callback_data для MenuOption (как и TreeMenu._build_menu_keyboard).
         """
         resolved_options = resolve_dynamic_options(node, state=state)
@@ -191,7 +217,7 @@ class TreeWizard:
                 cb_data = opt.callback_data
             else:
                 cb_data = f"{self.prefix}:{node_id}:{i}"
-            
+
             btn_kwargs: dict[str, str | None] = {
                 "text": opt.label,
                 "callback_data": cb_data,
@@ -206,16 +232,22 @@ class TreeWizard:
         # Кнопка "Назад" для не-корневых узлов
         if node_id != self.root:
             rows.append(
-                [InlineKeyboardButton(text=self.back_button_text, callback_data=f"{self.prefix}_back")]
+                [
+                    InlineKeyboardButton(
+                        text=self.back_button_text, callback_data=f"{self.prefix}_back"
+                    )
+                ]
             )
 
         # Кнопка "Отмена" (показывается на любом узле, если включена)
         if self.show_cancel_button:
             rows.append(
-                [InlineKeyboardButton(
-                    text=self.cancel_button_text,
-                    callback_data=f"{self.prefix}_cancel",
-                )]
+                [
+                    InlineKeyboardButton(
+                        text=self.cancel_button_text,
+                        callback_data=f"{self.prefix}_cancel",
+                    )
+                ]
             )
 
         return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -234,23 +266,30 @@ class TreeWizard:
     async def start(self, target: Message | CallbackQuery, state: FSMContext):
         """Запускает wizard с корневого узла. target — Message или CallbackQuery."""
         user_id = getattr(target, "from_user", None)
-        print(f"[TREE_WIZARD_START] root={self.root} user_id={getattr(user_id, 'id', None)}")
+        print(
+            f"[TREE_WIZARD_START] root={self.root} user_id={getattr(user_id, 'id', None)}"
+        )
         # Middleware hook: start
         for mw in self.middleware:
             uid = getattr(user_id, "id", None) if user_id else None
-            await mw(MiddlewareData(
-                event_type="start", node_id=self.root,
-                user_id=uid,
-            ))
+            await mw(
+                MiddlewareData(
+                    event_type="start",
+                    node_id=self.root,
+                    user_id=uid,
+                )
+            )
 
         wz = WizardState.start(self.root)
-        print(f"[TREE_WIZARD_START] Setting state to {self.state_group.__name__}.active, root={self.root}")
+        print(
+            f"[TREE_WIZARD_START] Setting state to {self.state_group.__name__}.active, root={self.root}"
+        )
         await state.set_state(self.state_group.active)
         await state.update_data(**wz.to_dict())
 
         # on_start hook — вызывается до отправки первого сообщения (P1.3)
         if self.on_start:
-            print(f"[TREE_WIZARD_START] Calling on_start hook")
+            print("[TREE_WIZARD_START] Calling on_start hook")
             await self.on_start(target, state)
 
         print(f"[TREE_WIZARD_START] Rendering root node={self.root}")
@@ -325,7 +364,14 @@ class TreeWizard:
         else:
             await target.answer(node.text, reply_markup=kb)
 
-    async def switch_to_menu(self, state: FSMContext, target, target_node: str | None = None, shared_data: dict | None = None, menu: TreeMenu | None = None):
+    async def switch_to_menu(
+        self,
+        state: FSMContext,
+        target,
+        target_node: str | None = None,
+        shared_data: dict | None = None,
+        menu: TreeMenu | None = None,
+    ):
         """
         Переводит пользователя из опроса в меню (P2).
 
@@ -346,12 +392,14 @@ class TreeWizard:
                 user_id = user_id.id
 
         for mw in self.middleware:
-            await mw(MiddlewareData(
-                event_type="transition_to_menu",
-                user_id=user_id,
-                target_node=target_node,
-                shared_data=shared_data or {},
-            ))
+            await mw(
+                MiddlewareData(
+                    event_type="transition_to_menu",
+                    user_id=user_id,
+                    target_node=target_node,
+                    shared_data=shared_data or {},
+                )
+            )
 
         # Сохраняем shared_data в FSMContext
         if shared_data:
@@ -367,7 +415,7 @@ class TreeWizard:
             target_node = "main"
 
         ms = MenuState(current_node=target_node, parent_node=None)
-        
+
         # ВАЖНО: НЕ перезаписываем существующие данные FSM (язык, баллы квиза и т.д.)
         # Вместо этого обновляем только поля MenuState поверх существующих данных
         current_data = await state.get_data()
@@ -389,20 +437,31 @@ class TreeWizard:
             await target.answer(node.text, reply_markup=kb)
 
     def _register_handlers(self):
-        state_filter = self.state_group.active if hasattr(self, 'state_group') else WizardStates.active
+        state_filter = (
+            self.state_group.active
+            if hasattr(self, "state_group")
+            else WizardStates.active
+        )
+
         @self.router.callback_query(
             StateFilter(state_filter), F.data.startswith(f"{self.prefix}:")
         )
         async def handle_choice(call: CallbackQuery, state: FSMContext):
-            print(f"[TREE_WIZARD_CHOICE] call.data={call.data} user_id={call.from_user.id}")
+            print(
+                f"[TREE_WIZARD_CHOICE] call.data={call.data} user_id={call.from_user.id}"
+            )
             _, node_id, idx_str = call.data.split(":")
             data = await state.get_data()
             wz = WizardState.from_dict(data)
-            print(f"[TREE_WIZARD_CHOICE] Parsed: node_id={node_id}, idx_str={idx_str}, current_node={wz.current_node}")
+            print(
+                f"[TREE_WIZARD_CHOICE] Parsed: node_id={node_id}, idx_str={idx_str}, current_node={wz.current_node}"
+            )
 
             try:
                 new_wz, opt, is_final = choose(self.tree, wz, node_id, int(idx_str))
-                print(f"[TREE_WIZARD_CHOICE] Chose option: label={opt.label!r} value={opt.value!r} next_node={opt.next_node} is_final={is_final}")
+                print(
+                    f"[TREE_WIZARD_CHOICE] Chose option: label={opt.label!r} value={opt.value!r} next_node={opt.next_node} is_final={is_final}"
+                )
             except StaleChoiceError as e:
                 print(f"[TREE_WIZARD_CHOICE] StaleChoiceError: {e}")
                 await call.answer("Это меню устарело, начните заново.", show_alert=True)
@@ -410,26 +469,34 @@ class TreeWizard:
 
             # Middleware hook: choice
             for mw in self.middleware:
-                await mw(MiddlewareData(
-                    event_type="choice", node_id=node_id,
-                    option_index=int(idx_str), user_id=call.from_user.id,
-                ))
+                await mw(
+                    MiddlewareData(
+                        event_type="choice",
+                        node_id=node_id,
+                        option_index=int(idx_str),
+                        user_id=call.from_user.id,
+                    )
+                )
 
             await state.update_data(**new_wz.to_dict())
 
             if is_final:
-                print(f"[TREE_WIZARD_CHOICE] Final step reached! Calling on_finish")
+                print("[TREE_WIZARD_CHOICE] Final step reached! Calling on_finish")
                 # Middleware hook: finish
                 for mw in self.middleware:
-                    await mw(MiddlewareData(
-                        event_type="finish", node_id=node_id,
-                        option_index=int(idx_str), user_id=call.from_user.id,
-                    ))
+                    await mw(
+                        MiddlewareData(
+                            event_type="finish",
+                            node_id=node_id,
+                            option_index=int(idx_str),
+                            user_id=call.from_user.id,
+                        )
+                    )
 
                 if self.on_finish:
-                    print(f"[TREE_WIZARD_CHOICE] Calling on_finish handler")
+                    print("[TREE_WIZARD_CHOICE] Calling on_finish handler")
                     await self.on_finish(call, state, new_wz.answers)
-                print(f"[TREE_WIZARD_CHOICE] Clearing FSM state after finish")
+                print("[TREE_WIZARD_CHOICE] Clearing FSM state after finish")
                 await state.clear()
             else:
                 print(f"[TREE_WIZARD_CHOICE] Rendering next node={opt.next_node}")
@@ -440,16 +507,24 @@ class TreeWizard:
             StateFilter(state_filter), F.data == f"{self.prefix}_back"
         )
         async def handle_back(call: CallbackQuery, state: FSMContext):
-            print(f"[TREE_WIZARD_BACK] call.data={call.data} user_id={call.from_user.id}")
+            print(
+                f"[TREE_WIZARD_BACK] call.data={call.data} user_id={call.from_user.id}"
+            )
             data = await state.get_data()
             wz = go_back(WizardState.from_dict(data))
-            print(f"[TREE_WIZARD_BACK] After go_back: current_node={wz.current_node}, stack={wz.stack}")
+            print(
+                f"[TREE_WIZARD_BACK] After go_back: current_node={wz.current_node}, stack={wz.stack}"
+            )
 
             # Middleware hook: back
             for mw in self.middleware:
-                await mw(MiddlewareData(
-                    event_type="back", node_id=wz.current_node, user_id=call.from_user.id,
-                ))
+                await mw(
+                    MiddlewareData(
+                        event_type="back",
+                        node_id=wz.current_node,
+                        user_id=call.from_user.id,
+                    )
+                )
 
             await state.update_data(**wz.to_dict())
             print(f"[TREE_WIZARD_BACK] Rendering current_node={wz.current_node}")
@@ -525,25 +600,33 @@ class TreeMenu:
         Строит клавиатуру для меню — только опции с is_menu_item=True.
         Если передан state — разворачивает DynamicOption в обычные Option.
         """
-        print(f"[BUILD_MENU_KEYBOARD] node_id={node_id} state_type={type(state).__name__ if state else 'None'}")
-        
+        print(
+            f"[BUILD_MENU_KEYBOARD] node_id={node_id} state_type={type(state).__name__ if state else 'None'}"
+        )
+
         resolved_options = resolve_dynamic_options(node, state=state)
-        print(f"[BUILD_MENU_KEYBOARD] Resolved {len(resolved_options)} options for node={node_id}")
+        print(
+            f"[BUILD_MENU_KEYBOARD] Resolved {len(resolved_options)} options for node={node_id}"
+        )
 
         # Фильтруем только опции для меню (MenuOption с is_menu_item=True или обычные Option)
         menu_buttons: list[InlineKeyboardButton] = []
         for i, opt in enumerate(resolved_options):
             if isinstance(opt, MenuOption) and not opt.is_menu_item:
-                print(f"[BUILD_MENU_KEYBOARD] Skipping option {i}: label={opt.label!r} (is_menu_item=False)")
+                print(
+                    f"[BUILD_MENU_KEYBOARD] Skipping option {i}: label={opt.label!r} (is_menu_item=False)"
+                )
                 continue
             # Определяем callback_data: кастомный или стандартный формат {prefix}:{node_id}:{index}
             if isinstance(opt, MenuOption) and opt.callback_data is not None:
                 cb_data = opt.callback_data
             else:
                 cb_data = f"{self.prefix}:{node_id}:{i}"
-            
-            print(f"[BUILD_MENU_KEYBOARD] Option {i}: label={opt.label!r} value={opt.value!r} callback_data={cb_data!r}")
-            
+
+            print(
+                f"[BUILD_MENU_KEYBOARD] Option {i}: label={opt.label!r} value={opt.value!r} callback_data={cb_data!r}"
+            )
+
             btn_kwargs: dict[str, str | None] = {
                 "text": opt.label,
                 "callback_data": cb_data,
@@ -560,9 +643,15 @@ class TreeMenu:
         # Кнопка "Назад" для не-корневых узлов
         if node_id != self.root:
             rows.append(
-                [InlineKeyboardButton(text=self.back_button_text, callback_data=f"{self.prefix}_back")]
+                [
+                    InlineKeyboardButton(
+                        text=self.back_button_text, callback_data=f"{self.prefix}_back"
+                    )
+                ]
             )
-            print(f"[BUILD_MENU_KEYBOARD] Added back button (node_id={node_id} != root={self.root})")
+            print(
+                f"[BUILD_MENU_KEYBOARD] Added back button (node_id={node_id} != root={self.root})"
+            )
 
         return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -577,8 +666,12 @@ class TreeMenu:
             current_text = target.message.text
             current_kb = target.message.reply_markup
             if current_text == node.text and current_kb == kb:
-                print(f"[RENDER_MENU] Content unchanged for node={node_id}, skipping edit_text")
-                await target.answer()  # Просто подтверждаем callback без изменения контента
+                print(
+                    f"[RENDER_MENU] Content unchanged for node={node_id}, skipping edit_text"
+                )
+                await (
+                    target.answer()
+                )  # Просто подтверждаем callback без изменения контента
             else:
                 await target.message.edit_text(node.text, reply_markup=kb)
                 print(f"[RENDER_MENU] Edited text for node={node_id}")
@@ -588,23 +681,28 @@ class TreeMenu:
 
     async def start(self, message: Message, state: FSMContext):
         """Запускает меню с корневого узла."""
-        print(f"[TREE_MENU_START] root={self.root} user_id={getattr(message.from_user, 'id', None)} external_prefix={self.external_callback_prefix}")
+        print(
+            f"[TREE_MENU_START] root={self.root} user_id={getattr(message.from_user, 'id', None)} external_prefix={self.external_callback_prefix}"
+        )
         # Middleware hook: menu_start
         for mw in self.middleware:
             user_id = getattr(message, "from_user", None)
-            await mw(MenuMiddlewareData(
-                event_type="menu_start", node_id=self.root,
-                user_id=user_id.id if user_id else None,
-            ))
+            await mw(
+                MenuMiddlewareData(
+                    event_type="menu_start",
+                    node_id=self.root,
+                    user_id=user_id.id if user_id else None,
+                )
+            )
 
         ms = MenuState(current_node=self.root, parent_node=None)
-        print(f"[TREE_MENU_START] Setting state to MenuStates.active")
+        print("[TREE_MENU_START] Setting state to MenuStates.active")
         await state.set_state(MenuStates.active)
         await state.update_data(**ms.to_dict())
 
         # on_start hook — вызывается до отправки первого сообщения
         if self.on_start:
-            print(f"[TREE_MENU_START] Calling on_start hook")
+            print("[TREE_MENU_START] Calling on_start hook")
             await self.on_start(message, state)
 
         print(f"[TREE_MENU_START] Rendering root node={self.root}")
@@ -652,7 +750,13 @@ class TreeMenu:
         else:
             await target.answer(node.text, reply_markup=kb)
 
-    async def switch_to_wizard(self, state: FSMContext, target, target_node: str | None = None, shared_data: dict | None = None):
+    async def switch_to_wizard(
+        self,
+        state: FSMContext,
+        target,
+        target_node: str | None = None,
+        shared_data: dict | None = None,
+    ):
         """
         Переводит пользователя из меню в опрос (P2).
 
@@ -661,8 +765,10 @@ class TreeMenu:
 
         target — CallbackQuery или Message для рендеринга.
         """
-        print(f"[SWITCH_TO_WIZARD] user_id={getattr(target, 'from_user', None)} target_node={target_node} self.prefix={self.prefix}")
-        
+        print(
+            f"[SWITCH_TO_WIZARD] user_id={getattr(target, 'from_user', None)} target_node={target_node} self.prefix={self.prefix}"
+        )
+
         # Middleware hook: transition_to_wizard
         user_id = None
         if isinstance(target, CallbackQuery):
@@ -673,12 +779,14 @@ class TreeMenu:
                 user_id = user_id.id
 
         for mw in self.middleware:
-            await mw(MenuMiddlewareData(
-                event_type="transition_to_wizard",
-                user_id=user_id,
-                target_node=target_node,
-                shared_data=shared_data or {},
-            ))
+            await mw(
+                MenuMiddlewareData(
+                    event_type="transition_to_wizard",
+                    user_id=user_id,
+                    target_node=target_node,
+                    shared_data=shared_data or {},
+                )
+            )
 
         # Сохраняем shared_data в FSMContext
         if shared_data:
@@ -687,7 +795,9 @@ class TreeMenu:
             await state.update_data(**current_data)
 
         # Переключаемся на self.state_group.active
-        print(f"[SWITCH_TO_WIZARD] Switching to {self.state_group.__name__}.active, target_node={target_node}")
+        print(
+            f"[SWITCH_TO_WIZARD] Switching to {self.state_group.__name__}.active, target_node={target_node}"
+        )
         await state.set_state(self.state_group.active)
 
         # Если target_node не указан, используем корневой узел опроса (предполагаем "start")
@@ -714,7 +824,7 @@ class TreeMenu:
             await target.message.edit_text(node.text, reply_markup=kb)
         else:
             await target.answer(node.text, reply_markup=kb)
-        
+
         print(f"[SWITCH_TO_WIZARD] Successfully switched to wizard node={target_node}")
 
     def _register_handlers(self):
@@ -728,36 +838,52 @@ class TreeMenu:
             StateFilter(MenuStates.active), F.data.startswith(f"{self.prefix}:")
         )
         async def handle_menu_choice(call: CallbackQuery, state: FSMContext):
-            print(f"[HANDLE_MENU_CHOICE] call.data={call.data} user_id={call.from_user.id}")
+            print(
+                f"[HANDLE_MENU_CHOICE] call.data={call.data} user_id={call.from_user.id}"
+            )
             _, node_id, idx_str = call.data.split(":")
             data = await state.get_data()
             ms = MenuState.from_dict(data)
-            print(f"[HANDLE_MENU_CHOICE] Parsed: node_id={node_id}, idx_str={idx_str}, current_node={ms.current_node}")
+            print(
+                f"[HANDLE_MENU_CHOICE] Parsed: node_id={node_id}, idx_str={idx_str}, current_node={ms.current_node}"
+            )
 
             node = self.tree[node_id]
             resolved_options = resolve_dynamic_options(node, state=ms)
-            print(f"[HANDLE_MENU_CHOICE] Resolved {len(resolved_options)} options for node={node_id}")
+            print(
+                f"[HANDLE_MENU_CHOICE] Resolved {len(resolved_options)} options for node={node_id}"
+            )
 
             if not (0 <= int(idx_str) < len(resolved_options)):
-                print(f"[HANDLE_MENU_CHOICE] Invalid index: {idx_str} for node={node_id}, options count={len(resolved_options)}")
+                print(
+                    f"[HANDLE_MENU_CHOICE] Invalid index: {idx_str} for node={node_id}, options count={len(resolved_options)}"
+                )
                 await call.answer("Некорректный выбор.", show_alert=True)
                 return
 
             opt = resolved_options[int(idx_str)]
-            print(f"[HANDLE_MENU_CHOICE] Selected option: label={opt.label!r} value={opt.value!r} next_node={opt.next_node}")
+            print(
+                f"[HANDLE_MENU_CHOICE] Selected option: label={opt.label!r} value={opt.value!r} next_node={opt.next_node}"
+            )
 
             # Middleware hook: menu_choice
             for mw in self.middleware:
-                await mw(MenuMiddlewareData(
-                    event_type="menu_choice", node_id=node_id,
-                    option_index=int(idx_str), user_id=call.from_user.id,
-                ))
+                await mw(
+                    MenuMiddlewareData(
+                        event_type="menu_choice",
+                        node_id=node_id,
+                        option_index=int(idx_str),
+                        user_id=call.from_user.id,
+                    )
+                )
 
             if opt.next_node is None:
                 # next_node=None означает "кастомный обработчик" — не отвечаем на callback сами,
                 # чтобы кастомный handler (survey_btn, quiz_btn и т.д.) мог выполнить свою работу.
                 # Кастомный обработчик сам вызовет call.answer().
-                print(f"[HANDLE_MENU_CHOICE] next_node=None, deferring to custom handler for option={opt.value!r}")
+                print(
+                    f"[HANDLE_MENU_CHOICE] next_node=None, deferring to custom handler for option={opt.value!r}"
+                )
                 return
             else:
                 # Запоминаем текущий узел как родительский для навигации "Назад"
@@ -766,7 +892,9 @@ class TreeMenu:
                     parent_node=node_id,
                     data=ms.data,
                 )
-                print(f"[HANDLE_MENU_CHOICE] Navigating to next_node={opt.next_node}, parent={node_id}")
+                print(
+                    f"[HANDLE_MENU_CHOICE] Navigating to next_node={opt.next_node}, parent={node_id}"
+                )
                 await state.update_data(**new_ms.to_dict())
                 await self._render(call, opt.next_node, state=new_ms)
             await call.answer()
@@ -780,9 +908,13 @@ class TreeMenu:
 
             # Middleware hook: menu_back
             for mw in self.middleware:
-                await mw(MenuMiddlewareData(
-                    event_type="menu_back", node_id=ms.current_node, user_id=call.from_user.id,
-                ))
+                await mw(
+                    MenuMiddlewareData(
+                        event_type="menu_back",
+                        node_id=ms.current_node,
+                        user_id=call.from_user.id,
+                    )
+                )
 
             # Переход к родительскому узлу (или к корню если родителя нет)
             parent = ms.parent_node or self.root

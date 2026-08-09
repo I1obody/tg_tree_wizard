@@ -1,0 +1,838 @@
+unformatted: File would be reformatted
+   --> src\tg_tree_wizard\aiogram_adapter.py:111:48
+    |
+110 |         if (
+    -             (0x1F600 <= code_point <= 0x1F64F) or  # Emoticons
+    -             (0x1F300 <= code_point <= 0x1F5FF) or  # Misc Symbols and Pictographs
+    -             (0x1F680 <= code_point <= 0x1F6FF) or  # Transport and Map
+    -             (0x1F1E0 <= code_point <= 0x1F1FF) or  # Flags
+    -             (0x2702 <= code_point <= 0x27B0) or    # Dingbats
+    -             (0xFE0F == code_point)                 # Variation Selector-16
+111 +             (0x1F600 <= code_point <= 0x1F64F)  # Emoticons
+112 +             or (0x1F300 <= code_point <= 0x1F5FF)  # Misc Symbols and Pictographs
+113 +             or (0x1F680 <= code_point <= 0x1F6FF)  # Transport and Map
+114 +             or (0x1F1E0 <= code_point <= 0x1F1FF)  # Flags
+115 +             or (0x2702 <= code_point <= 0x27B0)  # Dingbats
+116 +             or (0xFE0F == code_point)  # Variation Selector-16
+117 |         ):
+--------------------------------------------------------------------------------
+180 |     ):
+    -         validate_tree(tree, root, allow_external_refs=True)  # TreeWizard допускает внешние ссылки (main_menu)
+181 +         validate_tree(
+182 +             tree, root, allow_external_refs=True
+183 +         )  # TreeWizard допускает внешние ссылки (main_menu)
+184 |         check_callback_data_limits(tree, callback_prefix)
+--------------------------------------------------------------------------------
+207 |         DynamicOption в обычные Option (P1.1).
+    -         
+208 +
+209 |         Поддерживает кастомный callback_data для MenuOption (как и TreeMenu._build_menu_keyboard).
+--------------------------------------------------------------------------------
+219 |                 cb_data = f"{self.prefix}:{node_id}:{i}"
+    -             
+220 +
+221 |             btn_kwargs: dict[str, str | None] = {
+--------------------------------------------------------------------------------
+234 |             rows.append(
+    -                 [InlineKeyboardButton(text=self.back_button_text, callback_data=f"{self.prefix}_back")]
+235 +                 [
+236 +                     InlineKeyboardButton(
+237 +                         text=self.back_button_text, callback_data=f"{self.prefix}_back"
+238 +                     )
+239 +                 ]
+240 |             )
+--------------------------------------------------------------------------------
+244 |             rows.append(
+    -                 [InlineKeyboardButton(
+    -                     text=self.cancel_button_text,
+    -                     callback_data=f"{self.prefix}_cancel",
+    -                 )]
+245 +                 [
+246 +                     InlineKeyboardButton(
+247 +                         text=self.cancel_button_text,
+248 +                         callback_data=f"{self.prefix}_cancel",
+249 +                     )
+250 +                 ]
+251 |             )
+--------------------------------------------------------------------------------
+268 |         user_id = getattr(target, "from_user", None)
+    -         print(f"[TREE_WIZARD_START] root={self.root} user_id={getattr(user_id, 'id', None)}")
+269 +         print(
+270 +             f"[TREE_WIZARD_START] root={self.root} user_id={getattr(user_id, 'id', None)}"
+271 +         )
+272 |         # Middleware hook: start
+273 |         for mw in self.middleware:
+274 |             uid = getattr(user_id, "id", None) if user_id else None
+    -             await mw(MiddlewareData(
+    -                 event_type="start", node_id=self.root,
+    -                 user_id=uid,
+    -             ))
+275 +             await mw(
+276 +                 MiddlewareData(
+277 +                     event_type="start",
+278 +                     node_id=self.root,
+279 +                     user_id=uid,
+280 +                 )
+281 +             )
+282 |
+283 |         wz = WizardState.start(self.root)
+    -         print(f"[TREE_WIZARD_START] Setting state to {self.state_group.__name__}.active, root={self.root}")
+284 +         print(
+285 +             f"[TREE_WIZARD_START] Setting state to {self.state_group.__name__}.active, root={self.root}"
+286 +         )
+287 |         await state.set_state(self.state_group.active)
+--------------------------------------------------------------------------------
+366 |
+    -     async def switch_to_menu(self, state: FSMContext, target, target_node: str | None = None, shared_data: dict | None = None, menu: TreeMenu | None = None):
+367 +     async def switch_to_menu(
+368 +         self,
+369 +         state: FSMContext,
+370 +         target,
+371 +         target_node: str | None = None,
+372 +         shared_data: dict | None = None,
+373 +         menu: TreeMenu | None = None,
+374 +     ):
+375 |         """
+--------------------------------------------------------------------------------
+394 |         for mw in self.middleware:
+    -             await mw(MiddlewareData(
+    -                 event_type="transition_to_menu",
+    -                 user_id=user_id,
+    -                 target_node=target_node,
+    -                 shared_data=shared_data or {},
+    -             ))
+395 +             await mw(
+396 +                 MiddlewareData(
+397 +                     event_type="transition_to_menu",
+398 +                     user_id=user_id,
+399 +                     target_node=target_node,
+400 +                     shared_data=shared_data or {},
+401 +                 )
+402 +             )
+403 |
+--------------------------------------------------------------------------------
+417 |         ms = MenuState(current_node=target_node, parent_node=None)
+    -         
+418 +
+419 |         # ВАЖНО: НЕ перезаписываем существующие данные FSM (язык, баллы квиза и т.д.)
+--------------------------------------------------------------------------------
+439 |     def _register_handlers(self):
+    -         state_filter = self.state_group.active if hasattr(self, 'state_group') else WizardStates.active
+440 +         state_filter = (
+441 +             self.state_group.active
+442 +             if hasattr(self, "state_group")
+443 +             else WizardStates.active
+444 +         )
+445 +
+446 |         @self.router.callback_query(
+447 |             StateFilter(state_filter), F.data.startswith(f"{self.prefix}:")
+448 |         )
+449 |         async def handle_choice(call: CallbackQuery, state: FSMContext):
+    -             print(f"[TREE_WIZARD_CHOICE] call.data={call.data} user_id={call.from_user.id}")
+450 +             print(
+451 +                 f"[TREE_WIZARD_CHOICE] call.data={call.data} user_id={call.from_user.id}"
+452 +             )
+453 |             _, node_id, idx_str = call.data.split(":")
+454 |             data = await state.get_data()
+455 |             wz = WizardState.from_dict(data)
+    -             print(f"[TREE_WIZARD_CHOICE] Parsed: node_id={node_id}, idx_str={idx_str}, current_node={wz.current_node}")
+456 +             print(
+457 +                 f"[TREE_WIZARD_CHOICE] Parsed: node_id={node_id}, idx_str={idx_str}, current_node={wz.current_node}"
+458 +             )
+459 |
+460 |             try:
+461 |                 new_wz, opt, is_final = choose(self.tree, wz, node_id, int(idx_str))
+    -                 print(f"[TREE_WIZARD_CHOICE] Chose option: label={opt.label!r} value={opt.value!r} next_node={opt.next_node} is_final={is_final}")
+462 +                 print(
+463 +                     f"[TREE_WIZARD_CHOICE] Chose option: label={opt.label!r} value={opt.value!r} next_node={opt.next_node} is_final={is_final}"
+464 +                 )
+465 |             except StaleChoiceError as e:
+--------------------------------------------------------------------------------
+471 |             for mw in self.middleware:
+    -                 await mw(MiddlewareData(
+    -                     event_type="choice", node_id=node_id,
+    -                     option_index=int(idx_str), user_id=call.from_user.id,
+    -                 ))
+472 +                 await mw(
+473 +                     MiddlewareData(
+474 +                         event_type="choice",
+475 +                         node_id=node_id,
+476 +                         option_index=int(idx_str),
+477 +                         user_id=call.from_user.id,
+478 +                     )
+479 +                 )
+480 |
+--------------------------------------------------------------------------------
+486 |                 for mw in self.middleware:
+    -                     await mw(MiddlewareData(
+    -                         event_type="finish", node_id=node_id,
+    -                         option_index=int(idx_str), user_id=call.from_user.id,
+    -                     ))
+487 +                     await mw(
+488 +                         MiddlewareData(
+489 +                             event_type="finish",
+490 +                             node_id=node_id,
+491 +                             option_index=int(idx_str),
+492 +                             user_id=call.from_user.id,
+493 +                         )
+494 +                     )
+495 |
+--------------------------------------------------------------------------------
+509 |         async def handle_back(call: CallbackQuery, state: FSMContext):
+    -             print(f"[TREE_WIZARD_BACK] call.data={call.data} user_id={call.from_user.id}")
+510 +             print(
+511 +                 f"[TREE_WIZARD_BACK] call.data={call.data} user_id={call.from_user.id}"
+512 +             )
+513 |             data = await state.get_data()
+514 |             wz = go_back(WizardState.from_dict(data))
+    -             print(f"[TREE_WIZARD_BACK] After go_back: current_node={wz.current_node}, stack={wz.stack}")
+515 +             print(
+516 +                 f"[TREE_WIZARD_BACK] After go_back: current_node={wz.current_node}, stack={wz.stack}"
+517 +             )
+518 |
+519 |             # Middleware hook: back
+520 |             for mw in self.middleware:
+    -                 await mw(MiddlewareData(
+    -                     event_type="back", node_id=wz.current_node, user_id=call.from_user.id,
+    -                 ))
+521 +                 await mw(
+522 +                     MiddlewareData(
+523 +                         event_type="back",
+524 +                         node_id=wz.current_node,
+525 +                         user_id=call.from_user.id,
+526 +                     )
+527 +                 )
+528 |
+--------------------------------------------------------------------------------
+602 |         """
+    -         print(f"[BUILD_MENU_KEYBOARD] node_id={node_id} state_type={type(state).__name__ if state else 'None'}")
+    -         
+603 +         print(
+604 +             f"[BUILD_MENU_KEYBOARD] node_id={node_id} state_type={type(state).__name__ if state else 'None'}"
+605 +         )
+606 +
+607 |         resolved_options = resolve_dynamic_options(node, state=state)
+    -         print(f"[BUILD_MENU_KEYBOARD] Resolved {len(resolved_options)} options for node={node_id}")
+608 +         print(
+609 +             f"[BUILD_MENU_KEYBOARD] Resolved {len(resolved_options)} options for node={node_id}"
+610 +         )
+611 |
+--------------------------------------------------------------------------------
+615 |             if isinstance(opt, MenuOption) and not opt.is_menu_item:
+    -                 print(f"[BUILD_MENU_KEYBOARD] Skipping option {i}: label={opt.label!r} (is_menu_item=False)")
+616 +                 print(
+617 +                     f"[BUILD_MENU_KEYBOARD] Skipping option {i}: label={opt.label!r} (is_menu_item=False)"
+618 +                 )
+619 |                 continue
+--------------------------------------------------------------------------------
+624 |                 cb_data = f"{self.prefix}:{node_id}:{i}"
+    -             
+    -             print(f"[BUILD_MENU_KEYBOARD] Option {i}: label={opt.label!r} value={opt.value!r} callback_data={cb_data!r}")
+    -             
+625 +
+626 +             print(
+627 +                 f"[BUILD_MENU_KEYBOARD] Option {i}: label={opt.label!r} value={opt.value!r} callback_data={cb_data!r}"
+628 +             )
+629 +
+630 |             btn_kwargs: dict[str, str | None] = {
+--------------------------------------------------------------------------------
+645 |             rows.append(
+    -                 [InlineKeyboardButton(text=self.back_button_text, callback_data=f"{self.prefix}_back")]
+646 +                 [
+647 +                     InlineKeyboardButton(
+648 +                         text=self.back_button_text, callback_data=f"{self.prefix}_back"
+649 +                     )
+650 +                 ]
+651 +             )
+652 +             print(
+653 +                 f"[BUILD_MENU_KEYBOARD] Added back button (node_id={node_id} != root={self.root})"
+654 |             )
+    -             print(f"[BUILD_MENU_KEYBOARD] Added back button (node_id={node_id} != root={self.root})")
+655 |
+--------------------------------------------------------------------------------
+668 |             if current_text == node.text and current_kb == kb:
+    -                 print(f"[RENDER_MENU] Content unchanged for node={node_id}, skipping edit_text")
+    -                 await target.answer()  # Просто подтверждаем callback без изменения контента
+669 +                 print(
+670 +                     f"[RENDER_MENU] Content unchanged for node={node_id}, skipping edit_text"
+671 +                 )
+672 +                 await (
+673 +                     target.answer()
+674 +                 )  # Просто подтверждаем callback без изменения контента
+675 |             else:
+--------------------------------------------------------------------------------
+683 |         """Запускает меню с корневого узла."""
+    -         print(f"[TREE_MENU_START] root={self.root} user_id={getattr(message.from_user, 'id', None)} external_prefix={self.external_callback_prefix}")
+684 +         print(
+685 +             f"[TREE_MENU_START] root={self.root} user_id={getattr(message.from_user, 'id', None)} external_prefix={self.external_callback_prefix}"
+686 +         )
+687 |         # Middleware hook: menu_start
+688 |         for mw in self.middleware:
+689 |             user_id = getattr(message, "from_user", None)
+    -             await mw(MenuMiddlewareData(
+    -                 event_type="menu_start", node_id=self.root,
+    -                 user_id=user_id.id if user_id else None,
+    -             ))
+690 +             await mw(
+691 +                 MenuMiddlewareData(
+692 +                     event_type="menu_start",
+693 +                     node_id=self.root,
+694 +                     user_id=user_id.id if user_id else None,
+695 +                 )
+696 +             )
+697 |
+--------------------------------------------------------------------------------
+752 |
+    -     async def switch_to_wizard(self, state: FSMContext, target, target_node: str | None = None, shared_data: dict | None = None):
+753 +     async def switch_to_wizard(
+754 +         self,
+755 +         state: FSMContext,
+756 +         target,
+757 +         target_node: str | None = None,
+758 +         shared_data: dict | None = None,
+759 +     ):
+760 |         """
+--------------------------------------------------------------------------------
+767 |         """
+    -         print(f"[SWITCH_TO_WIZARD] user_id={getattr(target, 'from_user', None)} target_node={target_node} self.prefix={self.prefix}")
+    -         
+768 +         print(
+769 +             f"[SWITCH_TO_WIZARD] user_id={getattr(target, 'from_user', None)} target_node={target_node} self.prefix={self.prefix}"
+770 +         )
+771 +
+772 |         # Middleware hook: transition_to_wizard
+--------------------------------------------------------------------------------
+781 |         for mw in self.middleware:
+    -             await mw(MenuMiddlewareData(
+    -                 event_type="transition_to_wizard",
+    -                 user_id=user_id,
+    -                 target_node=target_node,
+    -                 shared_data=shared_data or {},
+    -             ))
+782 +             await mw(
+783 +                 MenuMiddlewareData(
+784 +                     event_type="transition_to_wizard",
+785 +                     user_id=user_id,
+786 +                     target_node=target_node,
+787 +                     shared_data=shared_data or {},
+788 +                 )
+789 +             )
+790 |
+--------------------------------------------------------------------------------
+797 |         # Переключаемся на self.state_group.active
+    -         print(f"[SWITCH_TO_WIZARD] Switching to {self.state_group.__name__}.active, target_node={target_node}")
+798 +         print(
+799 +             f"[SWITCH_TO_WIZARD] Switching to {self.state_group.__name__}.active, target_node={target_node}"
+800 +         )
+801 |         await state.set_state(self.state_group.active)
+--------------------------------------------------------------------------------
+826 |             await target.answer(node.text, reply_markup=kb)
+    -         
+827 +
+828 |         print(f"[SWITCH_TO_WIZARD] Successfully switched to wizard node={target_node}")
+--------------------------------------------------------------------------------
+840 |         async def handle_menu_choice(call: CallbackQuery, state: FSMContext):
+    -             print(f"[HANDLE_MENU_CHOICE] call.data={call.data} user_id={call.from_user.id}")
+841 +             print(
+842 +                 f"[HANDLE_MENU_CHOICE] call.data={call.data} user_id={call.from_user.id}"
+843 +             )
+844 |             _, node_id, idx_str = call.data.split(":")
+845 |             data = await state.get_data()
+846 |             ms = MenuState.from_dict(data)
+    -             print(f"[HANDLE_MENU_CHOICE] Parsed: node_id={node_id}, idx_str={idx_str}, current_node={ms.current_node}")
+847 +             print(
+848 +                 f"[HANDLE_MENU_CHOICE] Parsed: node_id={node_id}, idx_str={idx_str}, current_node={ms.current_node}"
+849 +             )
+850 |
+851 |             node = self.tree[node_id]
+852 |             resolved_options = resolve_dynamic_options(node, state=ms)
+    -             print(f"[HANDLE_MENU_CHOICE] Resolved {len(resolved_options)} options for node={node_id}")
+853 +             print(
+854 +                 f"[HANDLE_MENU_CHOICE] Resolved {len(resolved_options)} options for node={node_id}"
+855 +             )
+856 |
+857 |             if not (0 <= int(idx_str) < len(resolved_options)):
+    -                 print(f"[HANDLE_MENU_CHOICE] Invalid index: {idx_str} for node={node_id}, options count={len(resolved_options)}")
+858 +                 print(
+859 +                     f"[HANDLE_MENU_CHOICE] Invalid index: {idx_str} for node={node_id}, options count={len(resolved_options)}"
+860 +                 )
+861 |                 await call.answer("Некорректный выбор.", show_alert=True)
+862 |                 return
+863 |
+864 |             opt = resolved_options[int(idx_str)]
+    -             print(f"[HANDLE_MENU_CHOICE] Selected option: label={opt.label!r} value={opt.value!r} next_node={opt.next_node}")
+865 +             print(
+866 +                 f"[HANDLE_MENU_CHOICE] Selected option: label={opt.label!r} value={opt.value!r} next_node={opt.next_node}"
+867 +             )
+868 |
+869 |             # Middleware hook: menu_choice
+870 |             for mw in self.middleware:
+    -                 await mw(MenuMiddlewareData(
+    -                     event_type="menu_choice", node_id=node_id,
+    -                     option_index=int(idx_str), user_id=call.from_user.id,
+    -                 ))
+871 +                 await mw(
+872 +                     MenuMiddlewareData(
+873 +                         event_type="menu_choice",
+874 +                         node_id=node_id,
+875 +                         option_index=int(idx_str),
+876 +                         user_id=call.from_user.id,
+877 +                     )
+878 +                 )
+879 |
+--------------------------------------------------------------------------------
+883 |                 # Кастомный обработчик сам вызовет call.answer().
+    -                 print(f"[HANDLE_MENU_CHOICE] next_node=None, deferring to custom handler for option={opt.value!r}")
+884 +                 print(
+885 +                     f"[HANDLE_MENU_CHOICE] next_node=None, deferring to custom handler for option={opt.value!r}"
+886 +                 )
+887 |                 return
+--------------------------------------------------------------------------------
+894 |                 )
+    -                 print(f"[HANDLE_MENU_CHOICE] Navigating to next_node={opt.next_node}, parent={node_id}")
+895 +                 print(
+896 +                     f"[HANDLE_MENU_CHOICE] Navigating to next_node={opt.next_node}, parent={node_id}"
+897 +                 )
+898 |                 await state.update_data(**new_ms.to_dict())
+--------------------------------------------------------------------------------
+910 |             for mw in self.middleware:
+    -                 await mw(MenuMiddlewareData(
+    -                     event_type="menu_back", node_id=ms.current_node, user_id=call.from_user.id,
+    -                 ))
+911 +                 await mw(
+912 +                     MenuMiddlewareData(
+913 +                         event_type="menu_back",
+914 +                         node_id=ms.current_node,
+915 +                         user_id=call.from_user.id,
+916 +                     )
+917 +                 )
+918 |
+    |
+
+unformatted: File would be reformatted
+   --> src\tg_tree_wizard\core.py:96:1
+    |
+95  |     """
+96  +
+97  |     is_menu_item: bool = True
+    -     callback_data: str | None = None  # Переопределяет автоматически генерируемый формат {prefix}:{node_id}:{index}
+98  +     callback_data: str | None = (
+99  +         None  # Переопределяет автоматически генерируемый формат {prefix}:{node_id}:{index}
+100 +     )
+101 |
+--------------------------------------------------------------------------------
+120 |     для валидации дерева при старте бота.
+    -     
+121 +
+122 |     Поддерживает как WizardState (для TreeWizard), так и MenuState (для TreeMenu).
+--------------------------------------------------------------------------------
+128 |                 label = opt.label_factory(state)
+    -                 result.append(Option(label=label, value=opt.value, next_node=opt.next_node))
+129 +                 result.append(
+130 +                     Option(label=label, value=opt.value, next_node=opt.next_node)
+131 +                 )
+132 |             # Если state=None (валидация), пропускаем DynamicOption —
+--------------------------------------------------------------------------------
+138 |
+    - def validate_tree(tree: dict[str, Node], root: str, allow_external_refs: bool = False) -> None:
+139 + def validate_tree(
+140 +     tree: dict[str, Node], root: str, allow_external_refs: bool = False
+141 + ) -> None:
+142 |     """
+--------------------------------------------------------------------------------
+186 |     Это то, что вы будете класть целиком в FSMContext.data.
+    -     
+187 +
+188 |     shared_data — общий словарь, который сохраняется при переходах между
+189 |     меню и опросом. Используется для передачи данных (например, выбранный
+190 |     товар из опроса, который потом отображается в меню).
+191 |     """
+192 +
+193 |     stack: tuple[str, ...]
+--------------------------------------------------------------------------------
+240 |     запоминает, откуда пользователь пришёл в текущий узел.
+    -     
+241 +
+242 |     shared_data — общий словарь, который сохраняется при переходах между
+243 |     меню и опросом. Используется для передачи данных (например, выбранный
+244 |     товар из опроса, который потом отображается в меню).
+245 |     """
+246 +
+247 |     current_node: str
+    |
+
+unformatted: File would be reformatted
+  --> src\tg_tree_wizard\manager.py:47:1
+   |
+46 |         return dict(self._wizards)
+   -
+   -
+   |
+
+unformatted: File would be reformatted
+  --> src\tg_tree_wizard\middleware.py:50:25
+   |
+49 |
+   - MenuEventType = Literal["menu_start", "menu_choice", "menu_back", "transition_to_wizard"]
+50 + MenuEventType = Literal[
+51 +     "menu_start", "menu_choice", "menu_back", "transition_to_wizard"
+52 + ]
+53 |
+   |
+
+unformatted: File would be reformatted
+   --> tests\test_adapter.py:61:32
+    |
+60  |     tree = {
+    -         "lang": make_node(7),        # 7 вариантов языков, как в исходном боте
+61  +         "lang": make_node(7),  # 7 вариантов языков, как в исходном боте
+62  |         "delivery": make_node(2),
+--------------------------------------------------------------------------------
+75  |     assert max_len < TELEGRAM_CALLBACK_DATA_LIMIT_BYTES
+    -     print(f"Максимальная длина callback_data в этом дереве: {max_len} байт из {TELEGRAM_CALLBACK_DATA_LIMIT_BYTES}")
+76  +     print(
+77  +         f"Максимальная длина callback_data в этом дереве: {max_len} байт из {TELEGRAM_CALLBACK_DATA_LIMIT_BYTES}"
+78  +     )
+79  |
+80  |
+81  | # --- Тесты для P0 изменений: cancel и middleware ---
+82  |
+83  +
+84  | def test_cancel_button_not_shown_by_default():
+--------------------------------------------------------------------------------
+136 |     data = MiddlewareData(
+    -         event_type="choice", node_id="lang", option_index=0, user_id=42,
+137 +         event_type="choice",
+138 +         node_id="lang",
+139 +         option_index=0,
+140 +         user_id=42,
+141 |     )
+--------------------------------------------------------------------------------
+167 |     # С middleware — должно сохраниться
+    -     async def dummy(data): pass
+168 +     async def dummy(data):
+169 +         pass
+170 +
+171 |     w2 = TreeWizard(tree, root="a", middleware=[dummy])
+--------------------------------------------------------------------------------
+181 |
+    -     async def start_hook(msg, state): pass
+182 +     async def start_hook(msg, state):
+183 +         pass
+184 +
+185 |     w2 = TreeWizard(tree, root="a", on_start=start_hook)
+--------------------------------------------------------------------------------
+196 |
+    -     w2 = TreeWizard(
+    -         tree, root="a", show_cancel_button=True, cancel_button_text="Стоп"
+    -     )
+197 +     w2 = TreeWizard(tree, root="a", show_cancel_button=True, cancel_button_text="Стоп")
+198 |     assert w2.cancel_button_text == "Стоп"
+--------------------------------------------------------------------------------
+206 |     import inspect
+207 +
+208 |     assert inspect.iscoroutinefunction(wizard.cancel)
+--------------------------------------------------------------------------------
+212 |
+213 +
+214 | def test_treewizard_has_skip_to_method():
+--------------------------------------------------------------------------------
+219 |     import inspect
+220 +
+221 |     assert inspect.iscoroutinefunction(wizard.skip_to)
+--------------------------------------------------------------------------------
+229 |     import inspect
+230 +
+231 |     assert inspect.iscoroutinefunction(wizard.jump_to)
+--------------------------------------------------------------------------------
+245 |     import asyncio
+246 +
+247 |     asyncio.run(_test())
+--------------------------------------------------------------------------------
+261 |     import asyncio
+262 +
+263 |     asyncio.run(_test())
+--------------------------------------------------------------------------------
+271 |             text="Test",
+    -             options=(DynamicOption(
+    -                 label_factory=lambda s: f"Step {len(s.answers) + 1}",
+    -                 value="v1", next_node="final",
+    -             ),),
+272 +             options=(
+273 +                 DynamicOption(
+274 +                     label_factory=lambda s: f"Step {len(s.answers) + 1}",
+275 +                     value="v1",
+276 +                     next_node="final",
+277 +                 ),
+278 +             ),
+279 |         ),
+--------------------------------------------------------------------------------
+297 |             text="Test",
+    -             options=(URLOption(label="🌐 Сайт", value="url", url="https://example.com"),),
+298 +             options=(
+299 +                 URLOption(label="🌐 Сайт", value="url", url="https://example.com"),
+300 +             ),
+301 |         ),
+--------------------------------------------------------------------------------
+318 |             text="Test",
+    -             options=(SwitchOption(label="🔍 Поиск", value="search", switch_inline_query="поиск..."),),
+319 +             options=(
+320 +                 SwitchOption(
+321 +                     label="🔍 Поиск", value="search", switch_inline_query="поиск..."
+322 +                 ),
+323 +             ),
+324 |         ),
+--------------------------------------------------------------------------------
+460 |
+461 +
+462 | def test_wizard_manager_register_and_unregister():
+    |
+
+unformatted: File would be reformatted
+   --> tests\test_core.py:115:32
+    |
+114 | def test_linear_wizard_plain_strings_chain_to_next_step():
+    -     tree, root = linear_wizard([
+    -         ("a", "Шаг A", ["X", "Y"]),
+    -         ("b", "Шаг B", ["Z"]),
+    -     ])
+115 +     tree, root = linear_wizard(
+116 +         [
+117 +             ("a", "Шаг A", ["X", "Y"]),
+118 +             ("b", "Шаг B", ["Z"]),
+119 +         ]
+120 +     )
+121 |     assert root == "a"
+--------------------------------------------------------------------------------
+134 | def test_linear_wizard_explicit_next_node_enables_branching():
+    -     tree, root = linear_wizard([
+    -         ("topping", "Начинка", [
+    -             ("Пепперони", "pepperoni", "spicy"),
+    -             ("Маргарита", "margherita", "confirm"),
+    -         ]),
+    -         ("spicy", "Острота", ["Да", "Нет"]),
+    -         ("confirm", "Финал", ["OK"]),
+    -     ])
+135 +     tree, root = linear_wizard(
+136 +         [
+137 +             (
+138 +                 "topping",
+139 +                 "Начинка",
+140 +                 [
+141 +                     ("Пепперони", "pepperoni", "spicy"),
+142 +                     ("Маргарита", "margherita", "confirm"),
+143 +                 ],
+144 +             ),
+145 +             ("spicy", "Острота", ["Да", "Нет"]),
+146 +             ("confirm", "Финал", ["OK"]),
+147 +         ]
+148 +     )
+149 |     validate_tree(tree, root)
+--------------------------------------------------------------------------------
+172 |     d = state.to_dict()
+    -     assert isinstance(d["stack"], tuple), f"stack должен быть tuple, получен {type(d['stack'])}"
+    -     assert isinstance(d["answers"], tuple), f"answers должен быть tuple, получен {type(d['answers'])}"
+173 +     assert isinstance(d["stack"], tuple), (
+174 +         f"stack должен быть tuple, получен {type(d['stack'])}"
+175 +     )
+176 +     assert isinstance(d["answers"], tuple), (
+177 +         f"answers должен быть tuple, получен {type(d['answers'])}"
+178 +     )
+179 |
+--------------------------------------------------------------------------------
+219 |
+220 +
+221 | def test_dynamic_option_resolves_label_from_state():
+--------------------------------------------------------------------------------
+259 |             text="Выберите:",
+    -             options=(DynamicOption(
+    -                 label_factory=lambda state: f"Шаг {len(state.answers) + 1}",
+    -                 value="dynamic_val",
+    -                 next_node="final",
+    -             ),),
+260 +             options=(
+261 +                 DynamicOption(
+262 +                     label_factory=lambda state: f"Шаг {len(state.answers) + 1}",
+263 +                     value="dynamic_val",
+264 +                     next_node="final",
+265 +                 ),
+266 +             ),
+267 |         ),
+--------------------------------------------------------------------------------
+286 |             Option("Статик", "static_val"),
+    -             DynamicOption(label_factory=lambda s: f"Динам {s.current_node}", value="dyn_val"),
+287 +             DynamicOption(
+288 +                 label_factory=lambda s: f"Динам {s.current_node}", value="dyn_val"
+289 +             ),
+290 |             Option("Ещё статик", "static2"),
+--------------------------------------------------------------------------------
+311 |             text="Test",
+    -             options=(DynamicOption(
+    -                 label_factory=lambda s: "x", value="v", next_node="final",
+    -             ),),
+312 +             options=(
+313 +                 DynamicOption(
+314 +                     label_factory=lambda s: "x",
+315 +                     value="v",
+316 +                     next_node="final",
+317 +                 ),
+318 +             ),
+319 |         ),
+--------------------------------------------------------------------------------
+346 |     import asyncio
+347 +
+348 |     return asyncio.run(coro)
+--------------------------------------------------------------------------------
+355 |     tree = {
+    -         "a": Node(text="Step A", options=(Option("A1", "v1", "b"), Option("A2", "v2", "c"))),
+356 +         "a": Node(
+357 +             text="Step A", options=(Option("A1", "v1", "b"), Option("A2", "v2", "c"))
+358 +         ),
+359 |         "b": Node(text="Step B", options=(Option("B1", "v3", None),)),
+360 |         "c": Node(text="Step C", options=(Option("C1", "v4", None),)),
+361 |     }
+362 |
+    -     answers, final_node = _run(simulate_wizard(tree, root="a", choices=[("a", 0), ("b", 0)]))
+363 +     answers, final_node = _run(
+364 +         simulate_wizard(tree, root="a", choices=[("a", 0), ("b", 0)])
+365 +     )
+366 |     assert len(answers) == 2
+--------------------------------------------------------------------------------
+376 |     tree = {
+    -         "a": Node(text="Step A", options=(Option("A1", "v1", "b"), Option("A2", "v2", "c"))),
+377 +         "a": Node(
+378 +             text="Step A", options=(Option("A1", "v1", "b"), Option("A2", "v2", "c"))
+379 +         ),
+380 |         "b": Node(text="Step B", options=(Option("B1", "v3", None),)),
+381 |         "c": Node(text="Step C", options=(Option("C1", "v4", None),)),
+382 |     }
+383 |
+    -     answers, final_node = _run(simulate_wizard(tree, root="a", choices=[("a", 1), ("c", 0)]))
+384 +     answers, final_node = _run(
+385 +         simulate_wizard(tree, root="a", choices=[("a", 1), ("c", 0)])
+386 +     )
+387 |     assert len(answers) == 2
+--------------------------------------------------------------------------------
+421 |
+    -     answers, state = _run(simulate_wizard_with_state(tree, root="a", choices=[("a", 0), ("b", 0)]))
+422 +     answers, state = _run(
+423 +         simulate_wizard_with_state(tree, root="a", choices=[("a", 0), ("b", 0)])
+424 +     )
+425 |     assert len(answers) == 2
+--------------------------------------------------------------------------------
+445 |     tree = {
+    -         "a": Node(text="A", options=(DynamicOption(
+    -             label_factory=lambda s: f"Dynamic {len(s.answers)}", value="dv1", next_node="b",
+    -         ),)),
+446 +         "a": Node(
+447 +             text="A",
+448 +             options=(
+449 +                 DynamicOption(
+450 +                     label_factory=lambda s: f"Dynamic {len(s.answers)}",
+451 +                     value="dv1",
+452 +                     next_node="b",
+453 +                 ),
+454 +             ),
+455 +         ),
+456 |         "b": Node(text="B", options=(Option("B1", "v2", None),)),
+457 |     }
+458 |
+    -     answers, final_node = _run(simulate_wizard(tree, root="a", choices=[("a", 0), ("b", 0)]))
+459 +     answers, final_node = _run(
+460 +         simulate_wizard(tree, root="a", choices=[("a", 0), ("b", 0)])
+461 +     )
+462 |     assert len(answers) == 2
+    |
+
+unformatted: File would be reformatted
+   --> tests\test_menu.py:28:1
+    |
+27  |
+28  +
+29  | def test_menu_option_default_is_menu_item():
+--------------------------------------------------------------------------------
+109 |
+110 +
+111 | def test_menu_state_creation():
+--------------------------------------------------------------------------------
+149 |
+150 +
+151 | def test_resolve_dynamic_options_with_menu_option():
+--------------------------------------------------------------------------------
+156 |             MenuOption(label="Static", value="static"),
+    -             DynamicOption(label_factory=lambda s: f"Dynamic {len(s.answers)}", value="dyn", next_node=None),
+157 +             DynamicOption(
+158 +                 label_factory=lambda s: f"Dynamic {len(s.answers)}",
+159 +                 value="dyn",
+160 +                 next_node=None,
+161 +             ),
+162 |         ),
+--------------------------------------------------------------------------------
+174 |
+175 +
+176 | def test_choose_with_menu_style_navigation():
+--------------------------------------------------------------------------------
+227 |
+228 +
+229 | def test_tree_menu_build_keyboard_filters_non_menu_items():
+--------------------------------------------------------------------------------
+238 |                 MenuOption(label="Visible", value="v"),
+    -                 Option("Hidden regular", value="h"),  # обычный Option — показывается (из DynamicOption)
+    -                 MenuOption(label="Also visible", value="a", is_menu_item=False),  # скрыт
+239 +                 Option(
+240 +                     "Hidden regular", value="h"
+241 +                 ),  # обычный Option — показывается (из DynamicOption)
+242 +                 MenuOption(
+243 +                     label="Also visible", value="a", is_menu_item=False
+244 +                 ),  # скрыт
+245 |             ),
+--------------------------------------------------------------------------------
+385 |     # Используем длинный префикс с кириллицей (каждый символ = 2 байта в UTF-8).
+    -     long_prefix = "длинный_префикс_для_проверки_лимита"  # 34 символа * 2 = 68 байт уже > 64
+386 +     long_prefix = (
+387 +         "длинный_префикс_для_проверки_лимита"  # 34 символа * 2 = 68 байт уже > 64
+388 +     )
+389 |     tree = {
+--------------------------------------------------------------------------------
+398 |
+399 +
+400 | def test_menu_middleware_data_creation():
+--------------------------------------------------------------------------------
+404 |     data = MenuMiddlewareData(
+    -         event_type="menu_choice", node_id="main", option_index=0, user_id=123,
+405 +         event_type="menu_choice",
+406 +         node_id="main",
+407 +         option_index=0,
+408 +         user_id=123,
+409 |     )
+--------------------------------------------------------------------------------
+443 |
+444 +
+445 | def test_menu_option_exported_from_package():
+446 |     """MenuOption экспортируется из tg_tree_wizard."""
+447 |     import tg_tree_wizard
+448 +
+449 |     assert hasattr(tg_tree_wizard, "MenuOption")
+--------------------------------------------------------------------------------
+454 |     import tg_tree_wizard
+455 +
+456 |     assert hasattr(tg_tree_wizard, "MenuState")
+--------------------------------------------------------------------------------
+461 |     import tg_tree_wizard
+462 +
+463 |     assert hasattr(tg_tree_wizard, "TreeMenu")
+--------------------------------------------------------------------------------
+468 |     import tg_tree_wizard
+469 +
+470 |     assert hasattr(tg_tree_wizard, "MenuStates")
+--------------------------------------------------------------------------------
+475 |     import tg_tree_wizard
+476 +
+477 |     assert hasattr(tg_tree_wizard, "MenuMiddlewareData")
+--------------------------------------------------------------------------------
+484 |     import tg_tree_wizard
+485 +
+486 |     assert "MenuOption" in tg_tree_wizard.__all__
+    |
+
+7 files would be reformatted, 2 files already formatted

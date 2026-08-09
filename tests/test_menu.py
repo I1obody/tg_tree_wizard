@@ -1,17 +1,30 @@
 """Тесты для MenuOption, MenuState и TreeMenu."""
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
+import dataclasses
+
 import pytest
+
 from tg_tree_wizard.core import (
-    Node, Option, DynamicOption, MenuOption, WizardState, MenuState,
-    TreeError, StaleChoiceError, validate_tree, choose, resolve_dynamic_options,
+    DynamicOption,
+    MenuOption,
+    MenuState,
+    Node,
+    Option,
+    StaleChoiceError,
+    TreeError,
+    WizardState,
+    choose,
+    resolve_dynamic_options,
+    validate_tree,
 )
 
-
 # === MenuOption tests ===
+
 
 def test_menu_option_default_is_menu_item():
     """MenuOption по умолчанию имеет is_menu_item=True."""
@@ -38,7 +51,7 @@ def test_menu_option_with_next_node():
 def test_menu_option_is_frozen_dataclass():
     """MenuOption — frozen dataclass, его нельзя мутировать."""
     opt = MenuOption(label="Test", value="test")
-    with pytest.raises(Exception):
+    with pytest.raises(dataclasses.FrozenInstanceError):
         opt.label = "Changed"
 
 
@@ -94,6 +107,7 @@ def test_menu_option_mixed_with_regular_options():
 
 # === MenuState tests ===
 
+
 def test_menu_state_creation():
     """MenuState создаётся с current_node и пустым data."""
     ms = MenuState(current_node="main")
@@ -127,11 +141,12 @@ def test_menu_state_from_dict_missing_data():
 def test_menu_state_is_frozen():
     """MenuState — frozen dataclass, его нельзя мутировать."""
     ms = MenuState(current_node="main")
-    with pytest.raises(Exception):
+    with pytest.raises(dataclasses.FrozenInstanceError):
         ms.current_node = "other"
 
 
 # === resolve_dynamic_options with MenuOption ===
+
 
 def test_resolve_dynamic_options_with_menu_option():
     """resolve_dynamic_options корректно обрабатывает MenuOption."""
@@ -139,7 +154,11 @@ def test_resolve_dynamic_options_with_menu_option():
         text="Test",
         options=(
             MenuOption(label="Static", value="static"),
-            DynamicOption(label_factory=lambda s: f"Dynamic {len(s.answers)}", value="dyn", next_node=None),
+            DynamicOption(
+                label_factory=lambda s: f"Dynamic {len(s.answers)}",
+                value="dyn",
+                next_node=None,
+            ),
         ),
     )
     state = WizardState(stack=("test",))
@@ -152,6 +171,7 @@ def test_resolve_dynamic_options_with_menu_option():
 
 
 # === choose with MenuState (simulated flow) ===
+
 
 def test_choose_with_menu_style_navigation():
     """choose корректно обрабатывает переходы по меню."""
@@ -183,7 +203,7 @@ def test_choose_with_menu_style_navigation():
     assert opt.next_node == "settings"
 
     # Choose Done at settings -> final
-    final_state, final_opt, final_is_final = choose(tree, new_state, "settings", 0)
+    _final_state, final_opt, final_is_final = choose(tree, new_state, "settings", 0)
     assert final_is_final
     assert final_opt.value == None
 
@@ -205,6 +225,7 @@ def test_choose_stale_menu_choice():
 
 # === TreeMenu integration tests (unit-level, no aiogram runtime) ===
 
+
 def test_tree_menu_build_keyboard_filters_non_menu_items():
     """TreeMenu._build_menu_keyboard пропускает MenuOption с is_menu_item=False,
     но показывает обычные Option (включая resolved из DynamicOption)."""
@@ -215,8 +236,12 @@ def test_tree_menu_build_keyboard_filters_non_menu_items():
             text="Main",
             options=(
                 MenuOption(label="Visible", value="v"),
-                Option("Hidden regular", value="h"),  # обычный Option — показывается (из DynamicOption)
-                MenuOption(label="Also visible", value="a", is_menu_item=False),  # скрыт
+                Option(
+                    "Hidden regular", value="h"
+                ),  # обычный Option — показывается (из DynamicOption)
+                MenuOption(
+                    label="Also visible", value="a", is_menu_item=False
+                ),  # скрыт
             ),
         ),
     }
@@ -358,7 +383,9 @@ def test_tree_menu_callback_data_length_check():
     # 64 байта — лимит Telegram. Префикс "very_long_prefix_that_is_very_long" (38 символов) + ":" +
     # "x" (1 символ) + ":" + "0" (1 символ) = 41 символ ASCII = 41 байт. Нужно больше.
     # Используем длинный префикс с кириллицей (каждый символ = 2 байта в UTF-8).
-    long_prefix = "длинный_префикс_для_проверки_лимита"  # 34 символа * 2 = 68 байт уже > 64
+    long_prefix = (
+        "длинный_префикс_для_проверки_лимита"  # 34 символа * 2 = 68 байт уже > 64
+    )
     tree = {
         "main": Node(text="Main", options=(Option("X", "x", None),)),
     }
@@ -369,12 +396,16 @@ def test_tree_menu_callback_data_length_check():
 
 # === Middleware types tests ===
 
+
 def test_menu_middleware_data_creation():
     """MenuMiddlewareData создаётся корректно."""
     from tg_tree_wizard.middleware import MenuMiddlewareData
 
     data = MenuMiddlewareData(
-        event_type="menu_choice", node_id="main", option_index=0, user_id=123,
+        event_type="menu_choice",
+        node_id="main",
+        option_index=0,
+        user_id=123,
     )
     assert data.event_type == "menu_choice"
     assert data.node_id == "main"
@@ -387,7 +418,7 @@ def test_menu_middleware_data_frozen():
     from tg_tree_wizard.middleware import MenuMiddlewareData
 
     data = MenuMiddlewareData(event_type="menu_start", node_id=None)
-    with pytest.raises(Exception):
+    with pytest.raises(dataclasses.FrozenInstanceError):
         data.event_type = "changed"
 
 
@@ -402,43 +433,47 @@ def test_menu_abort_wizard_is_exception():
 
 def test_menu_event_type_literal():
     """MenuEventType содержит корректные значения."""
-    from tg_tree_wizard.middleware import MenuEventType
 
     # Проверяем, что типы существуют (Literal — это type hint)
-    valid_types = {"menu_start", "menu_choice", "menu_back"}
     # Literal нельзя проверить напрямую, но можно убедиться что импорт работает
     assert True
 
 
 # === Exports tests ===
 
+
 def test_menu_option_exported_from_package():
     """MenuOption экспортируется из tg_tree_wizard."""
     import tg_tree_wizard
+
     assert hasattr(tg_tree_wizard, "MenuOption")
 
 
 def test_menu_state_exported_from_package():
     """MenuState экспортируется из tg_tree_wizard."""
     import tg_tree_wizard
+
     assert hasattr(tg_tree_wizard, "MenuState")
 
 
 def test_tree_menu_exported_from_package():
     """TreeMenu экспортируется из tg_tree_wizard."""
     import tg_tree_wizard
+
     assert hasattr(tg_tree_wizard, "TreeMenu")
 
 
 def test_menu_states_exported_from_package():
     """MenuStates экспортируется из tg_tree_wizard."""
     import tg_tree_wizard
+
     assert hasattr(tg_tree_wizard, "MenuStates")
 
 
 def test_menu_middleware_types_exported():
     """Типы middleware для меню экспортируются из tg_tree_wizard."""
     import tg_tree_wizard
+
     assert hasattr(tg_tree_wizard, "MenuMiddlewareData")
     assert hasattr(tg_tree_wizard, "MenuAbortWizard")
     assert hasattr(tg_tree_wizard, "MenuMiddlewareHook")
@@ -447,6 +482,7 @@ def test_menu_middleware_types_exported():
 def test_all_exports_list_contains_menu_items():
     """__all__ содержит все menu-экспорты."""
     import tg_tree_wizard
+
     assert "MenuOption" in tg_tree_wizard.__all__
     assert "MenuState" in tg_tree_wizard.__all__
     assert "TreeMenu" in tg_tree_wizard.__all__

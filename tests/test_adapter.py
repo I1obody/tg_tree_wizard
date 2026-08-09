@@ -1,16 +1,18 @@
 import dataclasses
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import pytest
-from tg_tree_wizard.core import Node, Option, DynamicOption, WizardState, TreeError
+
 from tg_tree_wizard.aiogram_adapter import (
+    TELEGRAM_CALLBACK_DATA_LIMIT_BYTES,
     TreeWizard,
     check_callback_data_limits,
-    TELEGRAM_CALLBACK_DATA_LIMIT_BYTES,
 )
-from tg_tree_wizard.middleware import MiddlewareData, AbortWizard
+from tg_tree_wizard.core import DynamicOption, Node, Option, TreeError, WizardState
+from tg_tree_wizard.middleware import AbortWizard, MiddlewareData
 
 
 def make_node(n_options: int = 2) -> Node:
@@ -56,7 +58,7 @@ def test_realistic_short_ids_stay_well_under_limit():
     сколько шагов в дереве — потому что путь не кодируется в callback_data.
     """
     tree = {
-        "lang": make_node(7),        # 7 вариантов языков, как в исходном боте
+        "lang": make_node(7),  # 7 вариантов языков, как в исходном боте
         "delivery": make_node(2),
         "goal": make_node(7),
         "group": make_node(2),
@@ -71,10 +73,13 @@ def test_realistic_short_ids_stay_well_under_limit():
         max_len = max(max_len, len(candidate.encode("utf-8")))
 
     assert max_len < TELEGRAM_CALLBACK_DATA_LIMIT_BYTES
-    print(f"Максимальная длина callback_data в этом дереве: {max_len} байт из {TELEGRAM_CALLBACK_DATA_LIMIT_BYTES}")
+    print(
+        f"Максимальная длина callback_data в этом дереве: {max_len} байт из {TELEGRAM_CALLBACK_DATA_LIMIT_BYTES}"
+    )
 
 
 # --- Тесты для P0 изменений: cancel и middleware ---
+
 
 def test_cancel_button_not_shown_by_default():
     """P0.1: Кнопка отмены не показывается, если show_cancel_button=False (по умолчанию)."""
@@ -129,7 +134,10 @@ def test_abort_wizard_exception_exists():
 def test_middleware_data_has_correct_fields():
     """P0.2: MiddlewareData содержит все необходимые поля."""
     data = MiddlewareData(
-        event_type="choice", node_id="lang", option_index=0, user_id=42,
+        event_type="choice",
+        node_id="lang",
+        option_index=0,
+        user_id=42,
     )
     assert data.event_type == "choice"
     assert data.node_id == "lang"
@@ -157,7 +165,9 @@ def test_treewizard_accepts_middleware_parameter():
     assert w1.middleware == []
 
     # С middleware — должно сохраниться
-    async def dummy(data): pass
+    async def dummy(data):
+        pass
+
     w2 = TreeWizard(tree, root="a", middleware=[dummy])
     assert len(w2.middleware) == 1
 
@@ -169,7 +179,9 @@ def test_treewizard_accepts_on_start_parameter():
     w1 = TreeWizard(tree, root="a")
     assert w1.on_start is None
 
-    async def start_hook(msg, state): pass
+    async def start_hook(msg, state):
+        pass
+
     w2 = TreeWizard(tree, root="a", on_start=start_hook)
     assert w2.on_start is start_hook
 
@@ -182,9 +194,7 @@ def test_treewizard_accepts_cancel_parameters():
     assert w.show_cancel_button is True
     assert w.cancel_button_text == "❌ Отмена"
 
-    w2 = TreeWizard(
-        tree, root="a", show_cancel_button=True, cancel_button_text="Стоп"
-    )
+    w2 = TreeWizard(tree, root="a", show_cancel_button=True, cancel_button_text="Стоп")
     assert w2.cancel_button_text == "Стоп"
 
 
@@ -194,10 +204,12 @@ def test_treewizard_has_cancel_method():
     wizard = TreeWizard(tree, root="a")
     assert hasattr(wizard, "cancel")
     import inspect
+
     assert inspect.iscoroutinefunction(wizard.cancel)
 
 
 # --- Тесты для P1.2: skip_to / jump_to ---
+
 
 def test_treewizard_has_skip_to_method():
     """P1.2: TreeWizard имеет публичный метод skip_to()."""
@@ -205,6 +217,7 @@ def test_treewizard_has_skip_to_method():
     wizard = TreeWizard(tree, root="a")
     assert hasattr(wizard, "skip_to")
     import inspect
+
     assert inspect.iscoroutinefunction(wizard.skip_to)
 
 
@@ -214,6 +227,7 @@ def test_treewizard_has_jump_to_method():
     wizard = TreeWizard(tree, root="a")
     assert hasattr(wizard, "jump_to")
     import inspect
+
     assert inspect.iscoroutinefunction(wizard.jump_to)
 
 
@@ -229,6 +243,7 @@ def test_skip_to_raises_for_nonexistent_node():
             await wizard.skip_to(None, "nonexistent", None)
 
     import asyncio
+
     asyncio.run(_test())
 
 
@@ -244,20 +259,23 @@ def test_jump_to_raises_for_nonexistent_node():
             await wizard.jump_to(None, "nonexistent", None)
 
     import asyncio
+
     asyncio.run(_test())
 
 
 def test_build_keyboard_with_dynamic_option_resolves():
     """P1.1: _build_keyboard корректно разворачивает DynamicOption."""
-    from tg_tree_wizard.core import DynamicOption
 
     tree = {
         "dyn": Node(
             text="Test",
-            options=(DynamicOption(
-                label_factory=lambda s: f"Step {len(s.answers) + 1}",
-                value="v1", next_node="final",
-            ),),
+            options=(
+                DynamicOption(
+                    label_factory=lambda s: f"Step {len(s.answers) + 1}",
+                    value="v1",
+                    next_node="final",
+                ),
+            ),
         ),
         "final": make_node(),
     }
@@ -277,7 +295,9 @@ def test_build_keyboard_with_url_option_sets_url():
     tree = {
         "url": Node(
             text="Test",
-            options=(URLOption(label="🌐 Сайт", value="url", url="https://example.com"),),
+            options=(
+                URLOption(label="🌐 Сайт", value="url", url="https://example.com"),
+            ),
         ),
         "final": make_node(),
     }
@@ -296,7 +316,11 @@ def test_build_keyboard_with_switch_option_sets_inline_query():
     tree = {
         "switch": Node(
             text="Test",
-            options=(SwitchOption(label="🔍 Поиск", value="search", switch_inline_query="поиск..."),),
+            options=(
+                SwitchOption(
+                    label="🔍 Поиск", value="search", switch_inline_query="поиск..."
+                ),
+            ),
         ),
         "final": make_node(),
     }
@@ -314,10 +338,8 @@ def test_url_option_is_frozen_dataclass():
 
     opt = URLOption(label="🌐", value="v", url="https://test.com")
     assert opt.url == "https://test.com"
-    try:
+    with pytest.raises((TypeError, dataclasses.FrozenInstanceError)):
         opt.url = "https://other.com"  # type: ignore[misc]
-    except Exception as e:
-        assert isinstance(e, (TypeError, dataclasses.FrozenInstanceError))
 
 
 def test_switch_option_is_frozen_dataclass():
@@ -326,10 +348,8 @@ def test_switch_option_is_frozen_dataclass():
 
     opt = SwitchOption(label="🔍", value="v", switch_inline_query="поиск...")
     assert opt.switch_inline_query == "поиск..."
-    try:
+    with pytest.raises((TypeError, dataclasses.FrozenInstanceError)):
         opt.switch_inline_query = "другой"  # type: ignore[misc]
-    except Exception as e:
-        assert isinstance(e, (TypeError, dataclasses.FrozenInstanceError))
 
 
 def test_url_option_with_none_url_is_valid():
@@ -379,16 +399,17 @@ def test_visual_width_mixed_text_and_emoji():
 
 def test_pack_buttons_respects_emoji_width():
     """P2.3: pack_buttons корректно раскладывает кнопки с emoji."""
-    from tg_tree_wizard.aiogram_adapter import _visual_width, pack_buttons
     from aiogram.types import InlineKeyboardButton
+
+    from tg_tree_wizard.aiogram_adapter import pack_buttons
 
     # Каждая кнопка имеет базовую ширину +5 (отступы Telegram)
     # "🌐" = 2 визуальных символа → кнопка шириной 7
     buttons = [
         InlineKeyboardButton(text="🌐", callback_data="v0"),
-        InlineKeyboardButton(text="🚀", callback_data=f"v1"),
-        InlineKeyboardButton(text="✅", callback_data=f"v2"),
-        InlineKeyboardButton(text="🔍", callback_data=f"v3"),
+        InlineKeyboardButton(text="🚀", callback_data="v1"),
+        InlineKeyboardButton(text="✅", callback_data="v2"),
+        InlineKeyboardButton(text="🔍", callback_data="v3"),
     ]
 
     # max_row_length=15: 7+7=14 ≤ 15, но +7=21 > 15 → вторая кнопка на новую строку
@@ -400,8 +421,9 @@ def test_pack_buttons_respects_emoji_width():
 
 def test_pack_buttons_single_button_per_row_for_wide_emoji():
     """P2.3: pack_buttons помещает широкие emoji-кнопки в отдельные строки."""
-    from tg_tree_wizard.aiogram_adapter import _visual_width, pack_buttons
     from aiogram.types import InlineKeyboardButton
+
+    from tg_tree_wizard.aiogram_adapter import pack_buttons
 
     # "🌐" = 2 визуальных символа → кнопка шириной 7
     buttons = [
@@ -415,8 +437,8 @@ def test_pack_buttons_single_button_per_row_for_wide_emoji():
 
 def test_pack_buttons_empty_list():
     """P2.3: pack_buttons корректно обрабатывает пустой список кнопок."""
+
     from tg_tree_wizard.aiogram_adapter import pack_buttons
-    from aiogram.types import InlineKeyboardButton
 
     rows = pack_buttons([], max_row_length=10)
     assert rows == []
@@ -424,8 +446,9 @@ def test_pack_buttons_empty_list():
 
 def test_pack_buttons_single_button():
     """P2.3: pack_buttons корректно обрабатывает одну кнопку."""
-    from tg_tree_wizard.aiogram_adapter import pack_buttons
     from aiogram.types import InlineKeyboardButton
+
+    from tg_tree_wizard.aiogram_adapter import pack_buttons
 
     buttons = [InlineKeyboardButton(text="Test", callback_data="v0")]
     rows = pack_buttons(buttons, max_row_length=10)
@@ -434,6 +457,7 @@ def test_pack_buttons_single_button():
 
 
 # --- Тесты для WizardManager (P2.1) ---
+
 
 def test_wizard_manager_register_and_unregister():
     """P2.1: WizardManager может регистрировать и удалять wizard'ы."""
