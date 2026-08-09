@@ -139,3 +139,6 @@ ruff_fix.txt
 ruff_check2.txt
 ruff_check3.txt
 ruff_check4.txt
+ruff_format_run.txt
+ruff_format2.txt
+test_output2.txt
