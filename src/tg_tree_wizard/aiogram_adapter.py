@@ -512,8 +512,10 @@ class TreeWizard:
                 # Only clear wizard-specific state, keep user data
                 current_data = await state.get_data()
                 # Keep user_credentials and other persistent data
-                persistent_keys = ['user_credentials', 'reg_data']
-                persistent_data = {k: current_data.get(k) for k in persistent_keys if k in current_data}
+                persistent_keys = ["user_credentials", "reg_data"]
+                persistent_data = {
+                    k: current_data.get(k) for k in persistent_keys if k in current_data
+                }
                 await state.clear()
                 # Restore persistent data
                 if persistent_data:
@@ -723,8 +725,12 @@ class TreeMenu:
         # Preserve existing FSM data (user_credentials, etc.) when starting menu
         current_data = await state.get_data()
         # Extract user_credentials from current data to ensure it's in MenuState.data
-        user_credentials = current_data.get('user_credentials', {})
-        ms = MenuState(current_node=self.root, parent_node=None, data={'user_credentials': user_credentials})
+        user_credentials = current_data.get("user_credentials", {})
+        ms = MenuState(
+            current_node=self.root,
+            parent_node=None,
+            data={"user_credentials": user_credentials},
+        )
         print("[TREE_MENU_START] Setting state to MenuStates.active")
         await state.set_state(MenuStates.active)
         # Merge existing data with MenuState to preserve user_credentials
@@ -927,11 +933,11 @@ class TreeMenu:
                 # Запоминаем текущий узел как родительский для навигации "Назад"
                 # Preserve user_credentials in MenuState.data
                 current_data = await state.get_data()
-                user_credentials = current_data.get('user_credentials', {})
+                user_credentials = current_data.get("user_credentials", {})
                 new_ms = MenuState(
                     current_node=opt.next_node,
                     parent_node=node_id,
-                    data={'user_credentials': user_credentials},
+                    data={"user_credentials": user_credentials},
                 )
                 print(
                     f"[HANDLE_MENU_CHOICE] Navigating to next_node={opt.next_node}, parent={node_id}"
@@ -961,8 +967,10 @@ class TreeMenu:
             parent = ms.parent_node or self.root
             # Preserve user_credentials when navigating back
             current_data = await state.get_data()
-            user_credentials = current_data.get('user_credentials', {})
-            new_ms = MenuState(current_node=parent, data={'user_credentials': user_credentials})
+            user_credentials = current_data.get("user_credentials", {})
+            new_ms = MenuState(
+                current_node=parent, data={"user_credentials": user_credentials}
+            )
             await state.update_data(**new_ms.to_dict())
             await self._render(call, parent, state=new_ms)
             await call.answer()
