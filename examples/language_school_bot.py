@@ -19,7 +19,6 @@ from aiogram.types import CallbackQuery
 
 from tg_tree_wizard import Node, Option, TreeWizard
 
-
 TREE = {
     "lang": Node(
         text="Выберите язык:",

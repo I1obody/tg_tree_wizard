@@ -23,8 +23,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message
 
-from tg_tree_wizard import linear_wizard, TreeWizard
-
+from tg_tree_wizard import TreeWizard, linear_wizard
 
 TREE, ROOT = linear_wizard([
     ("size", "🍕 Выберите размер пиццы:", [

@@ -10,11 +10,12 @@ Telegram бот с меню, опросником и подпиской на п�
 
 import asyncio
 import os
+
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message
 
 from tg_tree_wizard import (
@@ -24,7 +25,6 @@ from tg_tree_wizard import (
     TreeWizard,
     linear_wizard,
 )
-
 
 # ==================== Состояния для регистрации ====================
 

@@ -21,8 +21,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message
 
-from tg_tree_wizard import TreeMenu, MenuOption, Node
-
+from tg_tree_wizard import MenuOption, Node, TreeMenu
 
 # Дерево меню — нелинейная навигация с помощью MenuOption.
 MENU_TREE = {

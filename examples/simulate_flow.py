@@ -5,20 +5,19 @@
 инфраструктуре aiogram, не имея сетевого доступа к api.telegram.org.
 """
 
-import sys
-import os
 import asyncio
+import os
+import sys
 from unittest.mock import AsyncMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import Chat, User, Message, CallbackQuery, Update
+from aiogram.types import CallbackQuery, Chat, Message, Update, User
 
-from tg_tree_wizard.core import Node, Option
 from tg_tree_wizard.aiogram_adapter import TreeWizard
-
+from tg_tree_wizard.core import Node, Option
 
 TREE = {
     "lang": Node(
