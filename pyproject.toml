@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tg-tree-wizard"
-version = "2.0.2"
+version = "2.0.3"
 description = "Лёгкий движок древовидных inline-опросников (wizard) и меню для aiogram 3"
 readme = "README.md"
 license = { file = "LICENSE" }
