@@ -4,6 +4,17 @@
 [semver](https://semver.org/): `MAJOR.MINOR.PATCH`
 (ломающие изменения → MAJOR, новые фичи без поломок → MINOR, багфиксы → PATCH).
 
+## [2.0.2] — 2026-09-14
+
+### Added
+- Динамический текст узлов: `Node.text` теперь может быть `str | Callable[[WizardState | MenuState], str]`
+- Пример бота с регистрацией через ввод текста и динамическим меню: `examples/pizza_bot_text_input.py`
+
+### Fixed
+- Сохранение пользовательских данных между wizard и menu через FSMContext
+- `TreeMenu.start` теперь корректно сохраняет `user_credentials` в `MenuState.data`
+- `TreeWizard.finish` сохраняет persistent данные при очистке состояния
+
 ## [2.0.1] — 2026-08-09
 
 ### Fixed

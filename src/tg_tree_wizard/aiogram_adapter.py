@@ -258,10 +258,13 @@ class TreeWizard:
         """
         node = self.tree[node_id]
         kb = self._build_keyboard(node_id, node, state=state)
+        text = node.text
+        if callable(text):
+            text = text(state) if state is not None else ""
         if isinstance(target, CallbackQuery):
-            await target.message.edit_text(node.text, reply_markup=kb)
+            await target.message.edit_text(text, reply_markup=kb)
         else:
-            await target.answer(node.text, reply_markup=kb)
+            await target.answer(text, reply_markup=kb)
 
     async def start(self, target: Message | CallbackQuery, state: FSMContext):
         """Запускает wizard с корневого узла. target — Message или CallbackQuery."""
@@ -338,10 +341,13 @@ class TreeWizard:
 
         node = self.tree[target_node]
         kb = self._build_keyboard(target_node, node, state=new_wz)
+        text = node.text
+        if callable(text):
+            text = text(new_wz)
         if isinstance(target, CallbackQuery):
-            await target.message.edit_text(node.text, reply_markup=kb)
+            await target.message.edit_text(text, reply_markup=kb)
         else:
-            await target.answer(node.text, reply_markup=kb)
+            await target.answer(text, reply_markup=kb)
 
     async def jump_to(self, target, target_node: str, state: FSMContext):
         """
@@ -359,10 +365,13 @@ class TreeWizard:
 
         node = self.tree[target_node]
         kb = self._build_keyboard(target_node, node, state=new_wz)
+        text = node.text
+        if callable(text):
+            text = text(new_wz)
         if isinstance(target, CallbackQuery):
-            await target.message.edit_text(node.text, reply_markup=kb)
+            await target.message.edit_text(text, reply_markup=kb)
         else:
-            await target.answer(node.text, reply_markup=kb)
+            await target.answer(text, reply_markup=kb)
 
     async def switch_to_menu(
         self,
@@ -431,10 +440,13 @@ class TreeWizard:
             node = self.tree[target_node]
             kb = self._build_menu_keyboard(target_node, node, state=ms)
 
+        text = node.text
+        if callable(text):
+            text = text(ms)
         if isinstance(target, CallbackQuery):
-            await target.message.edit_text(node.text, reply_markup=kb)
+            await target.message.edit_text(text, reply_markup=kb)
         else:
-            await target.answer(node.text, reply_markup=kb)
+            await target.answer(text, reply_markup=kb)
 
     def _register_handlers(self):
         state_filter = (
@@ -496,8 +508,18 @@ class TreeWizard:
                 if self.on_finish:
                     print("[TREE_WIZARD_CHOICE] Calling on_finish handler")
                     await self.on_finish(call, state, new_wz.answers)
-                print("[TREE_WIZARD_CHOICE] Clearing FSM state after finish")
+                # Preserve FSM data for menu access - don't clear state completely
+                # Only clear wizard-specific state, keep user data
+                current_data = await state.get_data()
+                # Keep user_credentials and other persistent data
+                persistent_keys = ['user_credentials', 'reg_data']
+                persistent_data = {k: current_data.get(k) for k in persistent_keys if k in current_data}
                 await state.clear()
+                # Restore persistent data
+                if persistent_data:
+                    await state.update_data(**persistent_data)
+                # Reset state to None to exit wizard
+                await state.set_state(None)
             else:
                 print(f"[TREE_WIZARD_CHOICE] Rendering next node={opt.next_node}")
                 await self._render(call, opt.next_node, state=new_wz)
@@ -660,12 +682,15 @@ class TreeMenu:
         print(f"[RENDER_MENU] node_id={node_id} target_type={type(target).__name__}")
         node = self.tree[node_id]
         kb = self._build_menu_keyboard(node_id, node, state=state)
+        text = node.text
+        if callable(text):
+            text = text(state) if state is not None else ""
         if isinstance(target, CallbackQuery):
             # Проверяем, изменился ли контент — если нет, пропускаем edit_text
             # (Telegram запрещает отправку идентичного контента: "message is not modified")
             current_text = target.message.text
             current_kb = target.message.reply_markup
-            if current_text == node.text and current_kb == kb:
+            if current_text == text and current_kb == kb:
                 print(
                     f"[RENDER_MENU] Content unchanged for node={node_id}, skipping edit_text"
                 )
@@ -673,10 +698,10 @@ class TreeMenu:
                     target.answer()
                 )  # Просто подтверждаем callback без изменения контента
             else:
-                await target.message.edit_text(node.text, reply_markup=kb)
+                await target.message.edit_text(text, reply_markup=kb)
                 print(f"[RENDER_MENU] Edited text for node={node_id}")
         else:
-            await target.answer(node.text, reply_markup=kb)
+            await target.answer(text, reply_markup=kb)
             print(f"[RENDER_MENU] Answered with text for node={node_id}")
 
     async def start(self, message: Message, state: FSMContext):
@@ -695,10 +720,17 @@ class TreeMenu:
                 )
             )
 
-        ms = MenuState(current_node=self.root, parent_node=None)
+        # Preserve existing FSM data (user_credentials, etc.) when starting menu
+        current_data = await state.get_data()
+        # Extract user_credentials from current data to ensure it's in MenuState.data
+        user_credentials = current_data.get('user_credentials', {})
+        ms = MenuState(current_node=self.root, parent_node=None, data={'user_credentials': user_credentials})
         print("[TREE_MENU_START] Setting state to MenuStates.active")
         await state.set_state(MenuStates.active)
-        await state.update_data(**ms.to_dict())
+        # Merge existing data with MenuState to preserve user_credentials
+        # Ensure MenuState data is properly merged
+        merged_data = {**current_data, **ms.to_dict()}
+        await state.update_data(**merged_data)
 
         # on_start hook — вызывается до отправки первого сообщения
         if self.on_start:
@@ -745,10 +777,13 @@ class TreeMenu:
 
         node = self.tree[target_node]
         kb = self._build_menu_keyboard(target_node, node, state=new_ms)
+        text = node.text
+        if callable(text):
+            text = text(new_ms) if new_ms is not None else ""
         if isinstance(target, CallbackQuery):
-            await target.message.edit_text(node.text, reply_markup=kb)
+            await target.message.edit_text(text, reply_markup=kb)
         else:
-            await target.answer(node.text, reply_markup=kb)
+            await target.answer(text, reply_markup=kb)
 
     async def switch_to_wizard(
         self,
@@ -820,10 +855,13 @@ class TreeMenu:
 
         node = self.tree[target_node]
         kb = self._build_keyboard(target_node, node, state=wz)
+        text = node.text
+        if callable(text):
+            text = text(wz) if wz is not None else ""
         if isinstance(target, CallbackQuery):
-            await target.message.edit_text(node.text, reply_markup=kb)
+            await target.message.edit_text(text, reply_markup=kb)
         else:
-            await target.answer(node.text, reply_markup=kb)
+            await target.answer(text, reply_markup=kb)
 
         print(f"[SWITCH_TO_WIZARD] Successfully switched to wizard node={target_node}")
 
@@ -887,10 +925,13 @@ class TreeMenu:
                 return
             else:
                 # Запоминаем текущий узел как родительский для навигации "Назад"
+                # Preserve user_credentials in MenuState.data
+                current_data = await state.get_data()
+                user_credentials = current_data.get('user_credentials', {})
                 new_ms = MenuState(
                     current_node=opt.next_node,
                     parent_node=node_id,
-                    data=ms.data,
+                    data={'user_credentials': user_credentials},
                 )
                 print(
                     f"[HANDLE_MENU_CHOICE] Navigating to next_node={opt.next_node}, parent={node_id}"
@@ -918,7 +959,10 @@ class TreeMenu:
 
             # Переход к родительскому узлу (или к корню если родителя нет)
             parent = ms.parent_node or self.root
-            new_ms = MenuState(current_node=parent, data=ms.data)
+            # Preserve user_credentials when navigating back
+            current_data = await state.get_data()
+            user_credentials = current_data.get('user_credentials', {})
+            new_ms = MenuState(current_node=parent, data={'user_credentials': user_credentials})
             await state.update_data(**new_ms.to_dict())
             await self._render(call, parent, state=new_ms)
             await call.answer()

@@ -81,6 +81,11 @@ async def cmd_start(message, state):
 
 `tg-tree-wizard` сводит это к декларативному описанию дерева и двум общим хендлерам — работающим для дерева любой формы и глубины, будь то опрос с ответами или навигационное меню без сохранения состояния выбора.
 
+**Новые возможности:**
+- Динамический текст узлов через callable `Node.text(state)` для персонализации меню
+- Сохранение пользовательских данных между wizard и menu через FSMContext
+- Пример полного бота с регистрацией и динамическим меню: [`examples/pizza_bot_text_input.py`](examples/pizza_bot_text_input.py)
+
 ## Сколько кода экономит
 
 Замер на дереве из 6 уровней (язык → формат → цель → индивидуально/группа → возраст → уровень владения), с 2–7 вариантами ответа на каждом — навигационная часть кода, без учёта бизнес-логики финального шага:
@@ -206,6 +211,23 @@ TREE = {
 }
 ```
 
+## Динамический текст узлов
+
+`Node.text` теперь может быть не только строкой, но и callable, принимающим состояние:
+
+```python
+from tg_tree_wizard import Node, MenuOption, TreeMenu
+
+MENU_TREE = {
+    "main": Node(
+        text=lambda state: f"Привет, {state.data.get('user', 'гость')}!",
+        options=(...),
+    ),
+}
+```
+
+Поддерживается в `TreeWizard` и `TreeMenu`. Полный пример с регистрацией и динамическим меню: [`examples/pizza_bot_text_input.py`](examples/pizza_bot_text_input.py).
+
 ## TreeMenu — навигационные меню
 
 ### Простые линейные меню: `TreeWizard` + `MenuOption`
@@ -314,8 +336,9 @@ tg_tree_wizard/
 ├── tests/                      # тесты ядра и адаптера, без сети и без Telegram
 └── examples/
     ├── simulate_flow.py        # прогон через настоящий aiogram Dispatcher, без сети
-    ├── language_school_bot.py  # реальный бот с опросом
-    ├── pizza_bot.py            # реальный бот с ветвлением
+    ├── language_school_bot.py  # бот с опросом
+    ├── pizza_bot.py            # бот с ветвлением
+    ├── pizza_bot_text_input.py # бот с регистрацией через ввод текста и динамическим меню
     └── menu_bot.py             # пример меню с TreeMenu и MenuOption
 ```
 

@@ -102,7 +102,7 @@ class MenuOption(Option):
 
 @dataclass(frozen=True)
 class Node:
-    text: str
+    text: str | Callable[["WizardState | MenuState"], str]
     # Поддерживает как обычные Option, так и DynamicOption (P1.1).
     options: tuple[Option | DynamicOption, ...] = field(default_factory=tuple)
 
